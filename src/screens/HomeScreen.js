@@ -11,13 +11,14 @@ import {
   StatusBar,
   Dimensions,
 } from 'react-native';
-import { MapPin, Bell, Search, SlidersHorizontal } from 'lucide-react-native';
+import { MapPin, Bell, Search, Filter, Settings } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import FilterScreen from './FilterScreen';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
-const categories = ['Tout', 'Appartement', 'Maison', 'Terrain'];
+const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio'];
 
 const recommended = [
   {
@@ -53,6 +54,7 @@ const recommended = [
 export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tout');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const navigation = useNavigation();
 
   const filtered = useMemo(() => {
@@ -93,6 +95,9 @@ export default function HomeScreen() {
             <MapPin color="#050505" size={18} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+            <Settings color="#3B2A1B" size={18} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Bell color="#3B2A1B" size={18} />
           </TouchableOpacity>
         </View>
@@ -109,8 +114,12 @@ export default function HomeScreen() {
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
-          <SlidersHorizontal color="#3B2A1B" size={18} />
+        <TouchableOpacity 
+          style={styles.filterButton} 
+          activeOpacity={0.7}
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <Filter color="#3B2A1B" size={18} />
         </TouchableOpacity>
       </View>
 
@@ -155,6 +164,14 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       />
 
+      <FilterScreen 
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={(filters) => {
+          console.log('Filtres appliqués depuis HomeScreen:', filters);
+          setFilterModalVisible(false);
+        }}
+      />
     </View>
   );
 }

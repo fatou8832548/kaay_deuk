@@ -28,6 +28,7 @@ export default function LocationScreen({ onApply }) {
       longitude: selectedRegion.longitude,
       name: selectedRegion.name || 'Zone personnalisée',
     });
+    
     if (onApply) onApply(selectedRegion);
   };
 
