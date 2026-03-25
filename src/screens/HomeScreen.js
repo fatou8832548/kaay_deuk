@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { MapPin, Bell, Search, Filter, Settings } from 'lucide-react-native';
+import SettingsScreen from './SettingsScreen';
 import { useNavigation } from '@react-navigation/native';
 import FilterScreen from './FilterScreen';
 
@@ -94,10 +95,18 @@ export default function HomeScreen() {
           >
             <MapPin color="#050505" size={18} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Paramètres')}
+          >
             <Settings color="#3B2A1B" size={18} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Notifications')}
+          >
             <Bell color="#3B2A1B" size={18} />
           </TouchableOpacity>
         </View>
