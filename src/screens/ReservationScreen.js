@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Smartphone, CreditCard } from 'lucide-react-native';
 
 const paymentOptions = [
@@ -15,97 +15,115 @@ export default function ReservationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Image source={require('../../assets/logo.png')} style={styles.logo} />
-        <Text style={styles.title}>Réservation</Text>
-        <Text style={styles.subtitle}>Phase de réservation</Text>
-      </View>
+      <ScrollView contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Image source={require('../../assets/logo.png')} style={styles.logo} />
+          <Text style={styles.title}>Réservation</Text>
+          <Text style={styles.subtitle}>Phase de réservation</Text>
+        </View>
 
-      {/* Stepper */}
-      <View style={styles.stepperRow}>
-        <View style={[styles.step, styles.stepActive]} />
-        <View style={styles.step} />
-        <View style={styles.step} />
-        <View style={styles.step} />
-      </View>
-      <View style={styles.stepperLabels}>
-        <Text style={styles.stepLabel}>Réservation</Text>
-        <Text style={styles.stepLabel}>Options</Text>
-        <Text style={styles.stepLabel}>Paiement</Text>
-        <Text style={styles.stepLabel}>Validation</Text>
-      </View>
+        {/* Bloc englobant étapes, frais, total, options paiement */}
+        <View style={styles.cardContainer}>
+          {/* Stepper */}
+          <View style={styles.stepperRow}>
+            <View style={[styles.step, styles.stepActive]} />
+            <View style={styles.step} />
+            <View style={styles.step} />
+            <View style={styles.step} />
+          </View>
+          <View style={styles.stepperLabels}>
+            <Text style={styles.stepLabel}>Réservation</Text>
+            <Text style={styles.stepLabel}>Options</Text>
+            <Text style={styles.stepLabel}>Paiement</Text>
+            <Text style={styles.stepLabel}>Validation</Text>
+          </View>
 
-      {/* Fees */}
-      <View style={styles.inputCard}>
-        <TextInput
-          style={styles.input}
-          placeholder="Frais de logement"
-          placeholderTextColor="#b6a98c"
-          value={''}
-          editable={false}
-        />
-        <Text style={styles.xof}>XOF</Text>
-      </View>
-      <View style={styles.inputCard}>
-        <TextInput
-          style={styles.input}
-          placeholder="Frais de réservation"
-          placeholderTextColor="#b6a98c"
-          value={''}
-          editable={false}
-        />
-        <Text style={styles.xof}>XOF</Text>
-      </View>
+          {/* Fees */}
+          <View style={{marginHorizontal: 0, marginBottom: 8}}>
+            <Text style={styles.feeLabel}>Frais de logement</Text>
+            <View style={styles.inputCard}>
+              <View style={styles.feeBox}>
+                <Text style={styles.feeValue}>xxxx XOF</Text>
+              </View>
+            </View>
+          </View>
+          <View style={{marginHorizontal: 0, marginBottom: 8}}>
+            <Text style={styles.feeLabel}>Frais de réservation</Text>
+            <View style={styles.inputCard}>
+              <View style={styles.feeBox}>
+                <Text style={styles.feeValue}>xxxx XOF</Text>
+              </View>
+            </View>
+          </View>
 
-      {/* Total */}
-      <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>FRAIS TOTAL</Text>
-        <Text style={styles.totalValue}>xxxx XOF</Text>
-      </View>
+          {/* Total aligné à droite, label au-dessus et en dehors */}
+          <View style={{marginBottom: 0, marginTop: 2}}>
+            <Text style={[styles.totalLabel, {textAlign: 'right', alignSelf: 'flex-end', color: '#3B2A1B', marginBottom: 2}]}>FRAIS TOTAL</Text>
+            <View style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+              <View style={styles.totalCard}>
+                <Text style={styles.totalValue}>xxxx XOF</Text>
+              </View>
+            </View>
+          </View>
 
-      {/* Payment options */}
-      <Text style={styles.paymentTitle}>Options de paiement</Text>
-      <View style={styles.paymentRow}>
-        {paymentOptions.map(opt => (
-          <TouchableOpacity
-            key={opt.id}
-            style={[styles.paymentOption, selectedPayment === opt.id && styles.paymentOptionActive]}
-            onPress={() => setSelectedPayment(opt.id)}
-          >
-            <Image source={opt.icon} style={styles.paymentImg} />
-          </TouchableOpacity>
-        ))}
-      </View>
+          {/* Payment options */}
+          <View style={{alignItems: 'center', marginBottom: 0}}>
+            <Text style={[styles.paymentTitle, {textAlign: 'center', alignSelf: 'center'}]}>Options de paiement</Text>
+          </View>
+          <View style={[styles.paymentRow, {justifyContent: 'center'}]}>
+            {paymentOptions.map(opt => (
+              <TouchableOpacity
+                key={opt.id}
+                style={[styles.paymentOption, selectedPayment === opt.id && styles.paymentOptionActive]}
+                onPress={() => setSelectedPayment(opt.id)}
+              >
+                <Image source={opt.icon} style={styles.paymentImg} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-      {/* Continue button */}
-      <TouchableOpacity style={styles.continueBtn}>
-        <Text style={styles.continueText}>Continuer</Text>
-      </TouchableOpacity>
+        {/* Continue button */}
+        <TouchableOpacity style={styles.continueBtn}>
+          <Text style={styles.continueText}>Continuer</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  cardContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    marginHorizontal: 12,
+    marginBottom: 18,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f9f7f3',
+    backgroundColor: '#F5E7CC',
     padding: 0,
   },
   header: {
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 8,
+    marginTop: 32,
+    marginBottom: 18,
   },
   logo: {
     width: 54,
     height: 54,
-    marginBottom: 2,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     color: '#3B2A1B',
-    marginBottom: 2,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 13,
@@ -141,57 +159,60 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   inputCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 18,
     marginHorizontal: 28,
     marginBottom: 12,
     paddingHorizontal: 18,
-    paddingVertical: 8,
+    paddingVertical: 10,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 1,
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#3B2A1B',
+  feeLabel: {
+    color: '#b6a98c',
     fontWeight: '600',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    paddingVertical: 8,
+    fontSize: 14,
+    marginBottom: 2,
   },
-  xof: {
+  feeBox: {
+    backgroundColor: '#f9f7f3',
+    borderRadius: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
+    marginBottom: 2,
+  },
+  feeValue: {
     color: '#b6a98c',
     fontWeight: '700',
-    fontSize: 15,
-    marginLeft: 8,
+    fontSize: 16,
   },
   totalCard: {
     alignSelf: 'center',
     backgroundColor: '#3B2A1B',
-    borderRadius: 18,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    borderRadius: 24,
+    paddingHorizontal: 40,
+    paddingVertical: 8,
     marginBottom: 18,
     marginTop: 2,
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
   },
   totalLabel: {
-    color: '#fff',
-    fontSize: 13,
+    color: '#F5E6D3',
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   totalValue: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -210,26 +231,26 @@ const styles = StyleSheet.create({
   },
   paymentOption: {
     backgroundColor: '#ede3cb',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 0,
     marginHorizontal: 2,
     borderWidth: 2,
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 64,
-    height: 48,
+    width: 70,
+    height: 52,
     overflow: 'hidden',
   },
   paymentOptionActive: {
-    borderColor: '#b6a98c',
-    backgroundColor: '#fff',
+    borderColor: '#9B8B75',
+    backgroundColor: '#fef9f3',
   },
   paymentImg: {
-    width: 56,
-    height: 36,
-    resizeMode: 'contain',
-    alignSelf: 'center',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 14,
   },
   continueBtn: {
     backgroundColor: '#3B2A1B',
