@@ -27,10 +27,14 @@ export default function RegisterScreen({ onRegister, onGoToLogin }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.card}>
+      {/* Logo, titre et sous-titre en dehors de la carte */}
+      <View style={styles.headerTop}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.heading}>Créer un compte</Text>
-        <Text style={styles.subheading}>Commencez votre recherche immobilière</Text>
+      </View>
+      <Text style={styles.outsideSubheading}>Commencez votre recherche immobilière</Text>
+      <View style={styles.card}>
+        {/* Logo, titre et sous-titre déplacés en dehors de la carte */}
 
         <View style={styles.inputGroup}>
           <TextInput
@@ -95,6 +99,11 @@ export default function RegisterScreen({ onRegister, onGoToLogin }) {
 }
 
 const styles = StyleSheet.create({
+  headerTop: {
+    alignItems: 'center',
+    marginBottom: 8,
+    marginTop: 30,
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5E7CC',
@@ -167,5 +176,12 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#3B2A1B',
     fontWeight: '700',
+  },
+  outsideSubheading: {
+    fontSize: 15,
+    color: '#3B2A1B',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '600',
   },
 });

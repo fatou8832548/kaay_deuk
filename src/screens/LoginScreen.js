@@ -21,10 +21,14 @@ export default function LoginScreen({ onLogin, onGoToRegister }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.card}>
+      <View style={styles.headerTop}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.heading}>Bon retour !</Text>
-        <Text style={styles.subheading}>Connectez-vous pour continuer</Text>
+      </View>
+      {/* Ajout du texte en dehors de la carte */}
+      <Text style={styles.outsideSubheading}>Connectez-vous pour continuer</Text>
+      <View style={styles.card}>
+        {/* Le texte est maintenant en dehors de la carte */}
 
         <View style={styles.inputGroup}>
           <TextInput
@@ -64,10 +68,16 @@ export default function LoginScreen({ onLogin, onGoToRegister }) {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+
   );
 }
 
 const styles = StyleSheet.create({
+  headerTop: {
+    alignItems: 'center',
+    marginBottom: 18,
+    marginTop: 30,
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5E7CC',
@@ -152,5 +162,12 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#3B2A1B',
     fontWeight: '700',
+  },
+  outsideSubheading: {
+    fontSize: 15,
+    color: '#3B2A1B',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '600',
   },
 });

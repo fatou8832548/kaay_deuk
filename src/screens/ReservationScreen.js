@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Smartphone, CreditCard } from 'lucide-react-native';
 
 const paymentOptions = [
@@ -12,6 +13,7 @@ const paymentOptions = [
 
 export default function ReservationScreen() {
   const [selectedPayment, setSelectedPayment] = useState('wave');
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -84,7 +86,7 @@ export default function ReservationScreen() {
         </View>
 
         {/* Continue button */}
-        <TouchableOpacity style={styles.continueBtn}>
+        <TouchableOpacity style={styles.continueBtn} onPress={() => navigation.navigate('ReservationPaymentScreen')}>
           <Text style={styles.continueText}>Continuer</Text>
         </TouchableOpacity>
       </ScrollView>

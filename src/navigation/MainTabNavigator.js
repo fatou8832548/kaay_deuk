@@ -10,8 +10,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { Home, Heart, Calendar, User, Settings2 } from 'lucide-react-native';
-
-// Import NotificationsScreen (to be created)
+import ReservationPaymentScreen from '../screens/ReservationPaymentScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -58,8 +57,8 @@ export default function MainTabNavigator({ onLogout }) {
         </Stack.Screen>
         <Stack.Screen name="LocationScreen" component={LocationScreen} />
         <Stack.Screen name="Paramètres" component={SettingsScreen} />
-        {/* Pas besoin de doublon stack pour RéservationScreen, il est déjà dans les tabs */}
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="ReservationPaymentScreen" component={ReservationPaymentScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
