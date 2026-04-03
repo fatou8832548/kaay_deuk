@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useFavorites } from '../context/FavoritesContext';
 import {
   View,
   Text,
@@ -24,31 +25,43 @@ const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio'];
 const recommended = [
   {
     id: '1',
-    title: 'Maison Familiale',
-    location: 'Thiès',
-    price: '250 000 FCFA/mois',
-    image: 'https://picsum.photos/seed/maison/400/300',
+    title: 'Maison Sénégalaise Traditionnelle',
+    location: 'Grand Standing (Thiès)',
+    price: '180 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
+    rooms: ['Salon', 'Chambre parentale', 'Chambre enfants', 'Cuisine', 'Cour', 'Salle de bain'],
   },
   {
     id: '2',
-    title: 'Appartement Standing',
-    location: 'Dakar',
-    price: '150 000 FCFA/mois',
-    image: 'https://picsum.photos/seed/appartement/400/300',
+    title: 'Villa Moderne',
+    location: 'Hersent (Thiès)',
+    price: '350 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain', 'Garage'],
   },
   {
     id: '3',
-    title: 'Villa Moderne',
-    location: 'Saly',
-    price: '320 000 FCFA/mois',
-    image: 'https://picsum.photos/seed/villa/400/300',
+    title: 'Case en banco',
+    location: 'Nguinth (Thiès)',
+    price: '90 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=400&q=80',
+    rooms: ['Pièce principale', 'Cuisine extérieure', 'Douche'],
   },
   {
     id: '4',
-    title: 'Studio Coquet',
-    location: 'Mbour',
-    price: '110 000 FCFA/mois',
-    image: 'https://picsum.photos/seed/studio/400/300',
+    title: 'Appartement Standing',
+    location: 'Cité Lamy (Thiès)',
+    price: '200 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=400&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre', 'Salle de bain', 'Balcon'],
+  },
+  {
+    id: '5',
+    title: 'Studio Thiès',
+    location: 'Thialy (Thiès)',
+    price: '120 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=400&q=80',
+    rooms: ['Pièce à vivre', 'Salle d’eau', 'Kitchenette'],
   },
 ];
 
@@ -57,27 +70,37 @@ export default function HomeScreen() {
   const [activeCategory, setActiveCategory] = useState('Tout');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const navigation = useNavigation();
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
   const filtered = useMemo(() => {
     if (activeCategory === 'Tout') return recommended;
     return recommended.filter((item) => item.title.toLowerCase().includes(activeCategory.toLowerCase()));
   }, [activeCategory]);
 
-  const renderCard = ({ item }) => (
-    <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.cardImage} />
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardSubtitle}>{item.location}</Text>
-        <View style={styles.cardFooter}>
-          <Text style={styles.cardPrice}>{item.price}</Text>
-          <TouchableOpacity style={styles.favoriteButton}>
-            <Text style={styles.favoriteText}>♡</Text>
-          </TouchableOpacity>
+  const renderCard = ({ item }) => {
+    const favorite = isFavorite(item.id);
+    return (
+      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}>
+        <Image source={{ uri: item.image }} style={styles.cardImage} />
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardSubtitle}>{item.location}</Text>
+          <View style={styles.cardFooter}>
+            <Text style={styles.cardPrice}>{item.price}</Text>
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={e => {
+                e.stopPropagation();
+                favorite ? removeFavorite(item.id) : addFavorite(item);
+              }}
+            >
+              <Text style={[styles.favoriteText, favorite && { color: '#C48A5A' }]}>{favorite ? '♥' : '♡'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </View>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.screen}>
@@ -156,6 +179,8 @@ export default function HomeScreen() {
           );
         }}
       />
+  // ...le reste du code inchangé...
+}
 
       <View style={styles.recommendedHeader}>
         <Text style={styles.recommendedTitle}>Recommandés</Text>

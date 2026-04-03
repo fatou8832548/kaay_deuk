@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -11,9 +10,14 @@ const paymentOptions = [
   { id: 'mastercard', label: 'Mastercard', icon: require('../../assets/mastercard.png') },
 ];
 
-export default function ReservationScreen() {
+export default function ReservationScreen({ route, navigation }) {
+  const property = route?.params?.property;
   const [selectedPayment, setSelectedPayment] = useState('wave');
-  const navigation = useNavigation();
+  const [housingFee, setHousingFee] = useState('');
+  const [reservationFee, setReservationFee] = useState('');
+
+  // Calcul du total (en nombre)
+  const total = (parseInt(housingFee) || 0) + (parseInt(reservationFee) || 0);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,7 +49,13 @@ export default function ReservationScreen() {
             <Text style={styles.feeLabel}>Frais de logement</Text>
             <View style={styles.inputCard}>
               <View style={styles.feeBox}>
-                <Text style={styles.feeValue}>xxxx XOF</Text>
+                <TextInput
+                  style={{fontSize: 16, color: '#3B2A1B', minWidth: 80}}
+                  placeholder="Montant en XOF"
+                  value={housingFee}
+                  onChangeText={setHousingFee}
+                  keyboardType="numeric"
+                />
               </View>
             </View>
           </View>
@@ -53,7 +63,13 @@ export default function ReservationScreen() {
             <Text style={styles.feeLabel}>Frais de réservation</Text>
             <View style={styles.inputCard}>
               <View style={styles.feeBox}>
-                <Text style={styles.feeValue}>xxxx XOF</Text>
+                <TextInput
+                  style={{fontSize: 16, color: '#3B2A1B', minWidth: 80}}
+                  placeholder="Montant en XOF"
+                  value={reservationFee}
+                  onChangeText={setReservationFee}
+                  keyboardType="numeric"
+                />
               </View>
             </View>
           </View>
@@ -63,7 +79,7 @@ export default function ReservationScreen() {
             <Text style={[styles.totalLabel, {textAlign: 'right', alignSelf: 'flex-end', color: '#3B2A1B', marginBottom: 2}]}>FRAIS TOTAL</Text>
             <View style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
               <View style={styles.totalCard}>
-                <Text style={styles.totalValue}>xxxx XOF</Text>
+                <Text style={styles.totalValue}>{total.toLocaleString()} XOF</Text>
               </View>
             </View>
           </View>

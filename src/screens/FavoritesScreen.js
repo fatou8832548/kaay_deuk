@@ -1,36 +1,15 @@
 
+
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import { X, MapPin } from 'lucide-react-native';
-
-const favorites = [
-  {
-    id: '1',
-    title: 'Maison à louer',
-    location: 'Grand standing, Thiès',
-    price: '150000 fcfa /mois',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-    reserved: false,
-  },
-  {
-    id: '2',
-    title: 'Appartement à louer',
-    location: 'Grand standing, Thiès',
-    price: '150000 fcfa /mois',
-    image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80',
-    reserved: true,
-  },
-  {
-    id: '3',
-    title: 'Maison à louer',
-    location: 'Grand standing, Thiès',
-    price: '150000 fcfa /mois',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-    reserved: false,
-  },
-];
+import { useFavorites } from '../context/FavoritesContext';
+import { useNavigation } from '@react-navigation/native';
 
 export default function FavoritesScreen() {
+  const { favorites, removeFavorite } = useFavorites();
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <Text style={styles.pageTitle}>Mes favoris</Text>
@@ -41,11 +20,13 @@ export default function FavoritesScreen() {
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.cardImage} />
+            <TouchableOpacity onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}>
+              <Image source={{ uri: item.image }} style={styles.cardImage} />
+            </TouchableOpacity>
             <View style={styles.cardContent}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
-                <TouchableOpacity style={styles.closeBtn}>
+                <TouchableOpacity style={styles.closeBtn} onPress={() => removeFavorite(item.id)}>
                   <X color="#3B2A1B" size={18} />
                 </TouchableOpacity>
               </View>
@@ -55,16 +36,14 @@ export default function FavoritesScreen() {
               </View>
               <Text style={styles.cardPrice}>{item.price}</Text>
               <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.visitBtn}>
+                <TouchableOpacity style={styles.visitBtn} onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}>
                   <Text style={styles.visitBtnText}>Visiter</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.reserveBtn, item.reserved && styles.reserveBtnDisabled]}
-                  disabled={item.reserved}
+                  style={styles.reserveBtn}
+                  // disabled={item.reserved} // Optionnel : à activer si la réservation est dynamique
                 >
-                  <Text style={[styles.reserveBtnText, item.reserved && styles.reserveBtnTextDisabled]}>
-                    {item.reserved ? 'Réservé' : 'Réserver'}
-                  </Text>
+                  <Text style={styles.reserveBtnText}>Réserver</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -66,7 +66,7 @@ export default function ReservationPaymentScreen() {
         </View>
         {/* Bouton continuer */}
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Continuer</Text>
+          <Text style={styles.buttonText}>Confirmer</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
