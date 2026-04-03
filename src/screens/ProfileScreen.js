@@ -1,19 +1,28 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, FlatList } from 'react-native';
 import { User, MoreVertical, Heart, Calendar, ChevronRight, Mail, Phone, Lock, Globe } from 'lucide-react-native';
+
+const LANGUAGES = [
+  { label: 'Français', value: 'fr' },
+  { label: 'English', value: 'en' },
+  { label: 'Español', value: 'es' },
+  { label: 'العربية', value: 'ar' },
+];
 
 export default function ProfileScreen() {
   // Dummy user data
-  const user = {
+  const [user, setUser] = useState({
     name: 'Lika Fall',
     email: 'lika.fall@email.com',
     phone: '+221 77 123 45 67',
-    avatar: null, // Could be a URL if you want to use an image
+    avatar: null,
     favorites: 12,
     reservations: 2,
     language: 'Français',
-  };
+    languageValue: 'fr',
+  });
+  const [langModal, setLangModal] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -75,15 +84,49 @@ export default function ProfileScreen() {
       {/* Preferences Section */}
       <Text style={styles.sectionTitle}>Préférences & Application</Text>
       <View style={styles.sectionCard}>
-        <View style={styles.sectionRow}>
+        <TouchableOpacity style={styles.sectionRow} onPress={() => setLangModal(true)}>
           <Globe color="#B98C5E" size={18} style={{ marginRight: 10 }} />
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>Langue</Text>
             <Text style={styles.sectionValue}>{user.language}</Text>
           </View>
           <ChevronRight color="#B98C5E" size={18} />
-        </View>
+        </TouchableOpacity>
       </View>
+
+      {/* Modal de sélection de langue */}
+      <Modal
+        visible={langModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLangModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setLangModal(false)} />
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Choisir la langue</Text>
+          <FlatList
+            data={LANGUAGES}
+            keyExtractor={item => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.langOption,
+                  user.languageValue === item.value && styles.langOptionActive,
+                ]}
+                onPress={() => {
+                  setUser(u => ({ ...u, language: item.label, languageValue: item.value }));
+                  setLangModal(false);
+                }}
+              >
+                <Text style={[
+                  styles.langOptionText,
+                  user.languageValue === item.value && styles.langOptionTextActive,
+                ]}>{item.label}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -197,5 +240,47 @@ const styles = StyleSheet.create({
     color: '#6E6258',
     fontSize: 13,
     marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  modalContent: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    minHeight: 280,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B2A1B',
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  langOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#F5E7CC',
+    alignItems: 'center',
+  },
+  langOptionActive: {
+    backgroundColor: '#3B2A1B',
+  },
+  langOptionText: {
+    fontSize: 16,
+    color: '#3B2A1B',
+    fontWeight: '600',
+  },
+  langOptionTextActive: {
+    color: '#fff',
   },
 });

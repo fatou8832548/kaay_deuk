@@ -20,7 +20,7 @@ import FilterScreen from './FilterScreen';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
-const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio'];
+const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio', 'Villa'];
 
 const recommended = [
   {
@@ -299,25 +299,40 @@ const styles = StyleSheet.create({
   },
   categories: {
     marginBottom: 18,
-    height: 40,
+    height: 48,
+    minHeight: 48,
   },
   categoriesContent: {
-    paddingRight: 6,
+    paddingRight: 16,
+    paddingLeft: 2,
+    alignItems: 'center',
+    minHeight: 48,
   },
   categoryPill: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 40,
-    marginRight: 8,
+    marginRight: 16,
+    minHeight: 36,
+    minWidth: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(59,42,27,0.08)',
+    alignSelf: 'flex-start',
   },
   categoryPillActive: {
     backgroundColor: '#3B2A1B',
+    borderColor: '#3B2A1B',
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: 15,
     color: '#6E6258',
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    flexShrink: 1,
+    textAlign: 'center',
   },
   categoryTextActive: {
     color: '#fff',
