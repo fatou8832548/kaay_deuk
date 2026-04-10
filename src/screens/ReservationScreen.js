@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Smartphone, CreditCard } from 'lucide-react-native';
+import { useReservations } from '../context/ReservationContext';
 
 const paymentOptions = [
   { id: 'wave', label: 'Wave', icon: require('../../assets/wave.png') },
@@ -15,6 +16,7 @@ export default function ReservationScreen({ route, navigation }) {
   const [selectedPayment, setSelectedPayment] = useState('wave');
   const [housingFee, setHousingFee] = useState('');
   const [reservationFee, setReservationFee] = useState('');
+  const { addReservation } = useReservations();
 
   // Calcul du total (en nombre)
   const total = (parseInt(housingFee) || 0) + (parseInt(reservationFee) || 0);
@@ -102,7 +104,10 @@ export default function ReservationScreen({ route, navigation }) {
         </View>
 
         {/* Continue button */}
-        <TouchableOpacity style={styles.continueBtn} onPress={() => navigation.navigate('ReservationPaymentScreen')}>
+        <TouchableOpacity style={styles.continueBtn} onPress={() => {
+          if (property) addReservation(property);
+          navigation.navigate('ReservationPaymentScreen');
+        }}>
           <Text style={styles.continueText}>Continuer</Text>
         </TouchableOpacity>
       </ScrollView>

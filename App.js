@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { FavoritesProvider } from './src/context/FavoritesContext';
+import { ReservationProvider } from './src/context/ReservationContext';
+import { UserProvider, useUser } from './src/context/UserContext';
 import { StyleSheet, View } from 'react-native';
 import { enableScreens } from 'react-native-screens';
 import SplashScreen from './src/screens/SplashScreen';
@@ -12,23 +14,22 @@ import OnboardingWelcomeScreen from './src/screens/OnboardingWelcomeScreen';
 
 enableScreens();
 
-export default function App() {
+function AppContent() {
   const [route, setRoute] = useState('splash');
   const [onboardingStep, setOnboardingStep] = useState(1);
+  const { setUser } = useUser();
 
   const handleFinishSplash = () => {
     setRoute('onboarding');
   };
 
   const handleLogin = (credentials) => {
-    // TODO: Replace this with real auth (API call)
-    console.log('Login attempt', credentials);
+    setUser({ fullName: credentials.email, email: credentials.email, phone: '' });
     setRoute('home');
   };
 
   const handleRegister = (data) => {
-    // TODO: Replace this with signup logic / API call
-    console.log('Register attempt', data);
+    setUser({ fullName: data.fullName, email: data.email, phone: data.phone });
     setRoute('home');
   };
 
@@ -64,16 +65,24 @@ export default function App() {
       case 'register':
         return <RegisterScreen onRegister={handleRegister} onGoToLogin={() => setRoute('login')} />;
       case 'home':
-        return <MainTabNavigator onLogout={() => setRoute('login')} />;
+        return <MainTabNavigator onLogout={() => { setUser(null); setRoute('login'); }} />;
       default:
         return null;
     }
   };
 
+  return <View style={styles.root}>{renderCurrentScreen()}</View>;
+}
+
+export default function App() {
   return (
-    <FavoritesProvider>
-      <View style={styles.root}>{renderCurrentScreen()}</View>
-    </FavoritesProvider>
+    <UserProvider>
+      <FavoritesProvider>
+        <ReservationProvider>
+          <AppContent />
+        </ReservationProvider>
+      </FavoritesProvider>
+    </UserProvider>
   );
 }
 

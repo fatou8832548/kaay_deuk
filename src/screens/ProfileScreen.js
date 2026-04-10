@@ -1,7 +1,10 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, FlatList, Image } from 'react-native';
 import { User, MoreVertical, Heart, Calendar, ChevronRight, Mail, Phone, Lock, Globe } from 'lucide-react-native';
+import { useFavorites } from '../context/FavoritesContext';
+import { useReservations } from '../context/ReservationContext';
+import { useUser } from '../context/UserContext';
 
 const LANGUAGES = [
   { label: 'Français', value: 'fr' },
@@ -11,18 +14,21 @@ const LANGUAGES = [
 ];
 
 export default function ProfileScreen() {
-  // Dummy user data
+  const { favorites } = useFavorites();
+  const { reservations } = useReservations();
+  const { user: contextUser } = useUser();
+
   const [user, setUser] = useState({
-    name: 'Lika Fall',
-    email: 'lika.fall@email.com',
-    phone: '+221 77 123 45 67',
+    name: contextUser?.fullName || 'Utilisateur',
+    email: contextUser?.email || '',
+    phone: contextUser?.phone || '',
     avatar: null,
-    favorites: 12,
-    reservations: 2,
     language: 'Français',
     languageValue: 'fr',
   });
   const [langModal, setLangModal] = useState(false);
+  const [favModal, setFavModal] = useState(false);
+  const [resModal, setResModal] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -41,16 +47,16 @@ export default function ProfileScreen() {
 
       {/* Quick Actions */}
       <View style={styles.quickActionsRow}>
-        <View style={styles.quickActionCard}>
+        <TouchableOpacity style={styles.quickActionCard} onPress={() => setFavModal(true)}>
           <Heart color="#B98C5E" size={22} />
           <Text style={styles.quickActionTitle}>Favoris</Text>
-          <Text style={styles.quickActionSubtitle}>{user.favorites} Logements</Text>
-        </View>
-        <View style={styles.quickActionCard}>
+          <Text style={styles.quickActionSubtitle}>{favorites.length} Logement{favorites.length !== 1 ? 's' : ''}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickActionCard} onPress={() => setResModal(true)}>
           <Calendar color="#B98C5E" size={22} />
           <Text style={styles.quickActionTitle}>Réservations</Text>
-          <Text style={styles.quickActionSubtitle}>{user.reservations} Actives</Text>
-        </View>
+          <Text style={styles.quickActionSubtitle}>{reservations.length} Active{reservations.length !== 1 ? 's' : ''}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Account Section */}
@@ -93,6 +99,80 @@ export default function ProfileScreen() {
           <ChevronRight color="#B98C5E" size={18} />
         </TouchableOpacity>
       </View>
+
+      {/* Modal Favoris */}
+      <Modal
+        visible={favModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFavModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setFavModal(false)} />
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Mes Favoris</Text>
+          {favorites.length === 0 ? (
+            <Text style={styles.emptyText}>Aucun logement en favori pour l'instant.</Text>
+          ) : (
+            <FlatList
+              data={favorites}
+              keyExtractor={item => String(item.id)}
+              renderItem={({ item }) => (
+                <View style={styles.propCard}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.propImage} />
+                  ) : (
+                    <View style={[styles.propImage, { backgroundColor: '#F5E7CC', alignItems: 'center', justifyContent: 'center' }]}>
+                      <Heart color="#B98C5E" size={24} />
+                    </View>
+                  )}
+                  <View style={styles.propInfo}>
+                    <Text style={styles.propTitle} numberOfLines={1}>{item.title || 'Logement'}</Text>
+                    <Text style={styles.propPrice}>{item.price || ''}</Text>
+                    {item.location ? <Text style={styles.propLocation}>{item.location}</Text> : null}
+                  </View>
+                </View>
+              )}
+            />
+          )}
+        </View>
+      </Modal>
+
+      {/* Modal Réservations */}
+      <Modal
+        visible={resModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setResModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setResModal(false)} />
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Mes Réservations</Text>
+          {reservations.length === 0 ? (
+            <Text style={styles.emptyText}>Aucune réservation pour l'instant.</Text>
+          ) : (
+            <FlatList
+              data={reservations}
+              keyExtractor={item => String(item.id)}
+              renderItem={({ item }) => (
+                <View style={styles.propCard}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.propImage} />
+                  ) : (
+                    <View style={[styles.propImage, { backgroundColor: '#F5E7CC', alignItems: 'center', justifyContent: 'center' }]}>
+                      <Calendar color="#B98C5E" size={24} />
+                    </View>
+                  )}
+                  <View style={styles.propInfo}>
+                    <Text style={styles.propTitle} numberOfLines={1}>{item.title || 'Logement'}</Text>
+                    <Text style={styles.propPrice}>{item.price || ''}</Text>
+                    {item.location ? <Text style={styles.propLocation}>{item.location}</Text> : null}
+                  </View>
+                </View>
+              )}
+            />
+          )}
+        </View>
+      </Modal>
 
       {/* Modal de sélection de langue */}
       <Modal
@@ -282,5 +362,46 @@ const styles = StyleSheet.create({
   },
   langOptionTextActive: {
     color: '#fff',
+  },
+  emptyText: {
+    color: '#6E6258',
+    fontSize: 15,
+    textAlign: 'center',
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  propCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5E7CC',
+    borderRadius: 14,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  propImage: {
+    width: 80,
+    height: 72,
+    borderRadius: 10,
+    margin: 8,
+  },
+  propInfo: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  propTitle: {
+    fontWeight: '700',
+    fontSize: 15,
+    color: '#3B2A1B',
+    marginBottom: 4,
+  },
+  propPrice: {
+    fontSize: 13,
+    color: '#B98C5E',
+    fontWeight: '600',
+  },
+  propLocation: {
+    fontSize: 12,
+    color: '#6E6258',
+    marginTop: 2,
   },
 });

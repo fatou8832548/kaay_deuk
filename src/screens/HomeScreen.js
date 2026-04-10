@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useFavorites } from '../context/FavoritesContext';
 import {
   View,
@@ -25,43 +25,99 @@ const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio', 'Villa
 const recommended = [
   {
     id: '1',
-    title: 'Villa contemporaine avec piscine',
-    location: 'Almadies (Dakar)',
-    price: '1 200 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre parentale', 'Chambre enfants', 'Salle de bain', 'Piscine'],
+    title: 'Villa moderne avec jardin',
+    location: 'Cite Lamy (Thies)',
+    price: '350 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre parentale', 'Chambre 2', 'Salle de bain', 'Jardin'],
   },
   {
     id: '2',
-    title: 'Maison familiale lumineuse',
-    location: 'Mermoz (Dakar)',
-    price: '800 000 FCFA/mois',
+    title: 'Maison familiale 4 chambres',
+    location: 'Medina Fall (Thies)',
+    price: '280 000 FCFA/mois',
     image: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain', 'Jardin'],
+    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Chambre 3', 'Chambre 4', 'Salle de bain'],
   },
   {
     id: '3',
-    title: 'Appartement standing centre-ville',
-    location: 'Plateau (Dakar)',
-    price: '600 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
+    title: 'Appartement standing neuf',
+    location: 'Thialy (Thies)',
+    price: '180 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=800&q=80',
     rooms: ['Salon', 'Cuisine', 'Chambre', 'Salle de bain', 'Balcon'],
   },
   {
     id: '4',
-    title: 'Appartement Standing',
-    location: 'Cité Lamy (Thiès)',
-    price: '200 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=400&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre', 'Salle de bain', 'Balcon'],
+    title: 'Studio meuble centre-ville',
+    location: 'Randoulene (Thies)',
+    price: '100 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Piece a vivre', 'Kitchenette', 'Salle d eau'],
   },
   {
     id: '5',
-    title: 'Studio Thiès',
-    location: 'Thialy (Thiès)',
-    price: '120 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=400&q=80',
-    rooms: ['Pièce à vivre', 'Salle d’eau', 'Kitchenette'],
+    title: 'Maison avec terrasse',
+    location: 'Nguinth (Thies)',
+    price: '220 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain', 'Terrasse'],
+  },
+  {
+    id: '6',
+    title: 'Villa avec piscine',
+    location: 'Keur Mousseu (Thies)',
+    price: '500 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre parentale', 'Chambre 2', 'Salle de bain', 'Piscine', 'Jardin'],
+  },
+  {
+    id: '7',
+    title: 'Chambre en colocation',
+    location: 'Mbour Thies (Thies)',
+    price: '45 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Chambre', 'Salle de bain partagee', 'Cuisine partagee'],
+  },
+  {
+    id: '8',
+    title: 'Appartement F3 lumineux',
+    location: 'Cite Ballabey (Thies)',
+    price: '160 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain'],
+  },
+  {
+    id: '9',
+    title: 'Maison plain-pied',
+    location: 'Tivaoune Peul (Thies)',
+    price: '130 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain', 'Cour'],
+  },
+  {
+    id: '10',
+    title: 'Studio proche universite',
+    location: 'Diakhao (Thies)',
+    price: '80 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Piece a vivre', 'Kitchenette', 'Salle d eau'],
+  },
+  {
+    id: '11',
+    title: 'Grande maison avec cour',
+    location: 'Leona (Thies)',
+    price: '200 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Chambre 3', 'Salle de bain', 'Grande cour'],
+  },
+  {
+    id: '12',
+    title: 'Appartement neuf F2',
+    location: 'Santhiaba (Thies)',
+    price: '140 000 FCFA/mois',
+    image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
+    rooms: ['Salon', 'Cuisine', 'Chambre', 'Salle de bain'],
   },
 ];
 
@@ -179,8 +235,6 @@ export default function HomeScreen() {
           );
         }}
       />
-  // ...le reste du code inchangé...
-}
 
       <View style={styles.recommendedHeader}>
         <Text style={styles.recommendedTitle}>Recommandés</Text>

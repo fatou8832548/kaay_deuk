@@ -1,510 +1,286 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, Dimensions, Animated, PanResponder } from 'react-native';
-import { WebView } from 'react-native-webview';
+﻿import React, { useRef, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  PanResponder,
+  ActivityIndicator,
+} from 'react-native';
+import { GLView } from 'expo-gl';
+import { Renderer, TextureLoader } from 'expo-three';
+import * as THREE from 'three';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+
+// Supprime le warning texture size
+THREE.TextureLoader = TextureLoader;
+
+const ROOMS = [
+  { key: 'Salon',   icon: 'home-outline',      asset: require('../../assets/360.jpg'), label: 'Salon Principal' },
+  { key: 'Cuisine', icon: 'restaurant-outline', asset: require('../../assets/360.jpg'), label: 'Cuisine Ouverte' },
+  { key: 'Chambre', icon: 'bed-outline',        asset: require('../../assets/360.jpg'), label: 'Chambre Parentale' },
+  { key: 'SDB',     icon: 'water-outline',      asset: require('../../assets/360.jpg'), label: 'Salle de Bain' },
+];
 
 export default function VirtualTourScreen({ route }) {
-  const { property } = route.params || {};
-  const [selectedRoom, setSelectedRoom] = useState('Salon');
-  const [lastDirection, setLastDirection] = useState(null);
-  const rooms = ['Salon', 'Cuisine', 'Chambre', 'SDB'];
-  const exampleImage = 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=800&q=80';
-  const window = Dimensions.get('window');
-  const [imageOffset] = useState(new Animated.ValueXY({ x: 0, y: 0 }));
+  const navigation = useNavigation();
+  const [roomIndex, setRoomIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [glKey, setGlKey] = useState(0);
 
-  const slideImage = (dx, dy) => {
-    Animated.spring(imageOffset, {
-      toValue: { x: dx, y: dy },
-      useNativeDriver: true,
-      friction: 7,
-    }).start(() => {
-      // Revenir à la position initiale après le slide
-      Animated.spring(imageOffset, {
-        toValue: { x: 0, y: 0 },
-        useNativeDriver: true,
-        friction: 7,
-      }).start();
-    });
-  };
+  // Three.js refs
+  const rendererRef = useRef(null);
+  const sceneRef    = useRef(null);
+  const cameraRef   = useRef(null);
+  const meshRef     = useRef(null);
+  const animRef     = useRef(null);
+  const phiRef      = useRef(Math.PI / 2);   // elevation
+  const thetaRef    = useRef(0);              // horizontal
+  const dragging    = useRef(false);
+  const lastPos     = useRef({ x: 0, y: 0 });
 
-  // Images pour chaque pièce (à remplacer par vos propres images si besoin)
-  const roomImages = {
-    Salon: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=800&q=80',
-    Cuisine: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=800&q=80',
-    Chambre: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=800&q=80',
-    SDB: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-  };
-
-  // Fonction pour changer de pièce avec les flèches
-  const changeRoom = (direction) => {
-    const idx = rooms.indexOf(selectedRoom);
-    let newIdx = idx;
-    if (direction === 'left' || direction === 'up') newIdx = (idx - 1 + rooms.length) % rooms.length;
-    if (direction === 'right' || direction === 'down') newIdx = (idx + 1) % rooms.length;
-    setSelectedRoom(rooms[newIdx]);
-  };
-
-  // PanResponder pour déplacer l'image avec le doigt
+  // PanResponder pour tourner la vue
   const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderMove: Animated.event([
-      null,
-      { dx: imageOffset.x, dy: imageOffset.y }
-    ], { useNativeDriver: false }),
-    onPanResponderRelease: () => {
-      Animated.spring(imageOffset, {
-        toValue: { x: 0, y: 0 },
-        useNativeDriver: true,
-        friction: 7,
-      }).start();
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder:  () => true,
+    onPanResponderGrant: (_, gs) => {
+      dragging.current = true;
+      lastPos.current  = { x: gs.x0, y: gs.y0 };
     },
+    onPanResponderMove: (_, gs) => {
+      if (!dragging.current) return;
+      var dx = gs.moveX - lastPos.current.x;
+      var dy = gs.moveY - lastPos.current.y;
+      lastPos.current = { x: gs.moveX, y: gs.moveY };
+      thetaRef.current -= dx * 0.005;
+      phiRef.current    = Math.max(0.1, Math.min(Math.PI - 0.1, phiRef.current + dy * 0.005));
+      updateCamera();
+    },
+    onPanResponderRelease: () => { dragging.current = false; },
   });
 
-  // Ne pas changer de pièce dans handleDpad, juste déplacer l'image
-  const handleDpad = (direction) => {
-    setLastDirection(direction);
-    if (direction === 'up') slideImage(0, -80);
-    if (direction === 'down') slideImage(0, 80);
-    if (direction === 'left') slideImage(-80, 0);
-    if (direction === 'right') slideImage(80, 0);
-  };
+  function updateCamera() {
+    if (!cameraRef.current) return;
+    var phi   = phiRef.current;
+    var theta = thetaRef.current;
+    cameraRef.current.target = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta),
+    );
+    cameraRef.current.lookAt(cameraRef.current.target);
+  }
 
-  // Exemple d'URL d'image panoramique libre de droits
-  const panoramaUrl = 'https://images.pexels.com/photos/210243/pexels-photo-210243.jpeg?auto=compress&w=1600&h=800&fit=crop';
+  async function onContextCreate(gl) {
+    setLoading(true);
 
-  // HTML pour Photo Sphere Viewer (libre et open source)
-  const panoramaHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Panorama 360</title>
-      <style>html,body,#viewer{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:transparent;}</style>
-      <link rel="stylesheet" href="https://unpkg.com/photo-sphere-viewer@5/dist/photo-sphere-viewer.css" />
-    </head>
-    <body>
-      <div id="viewer"></div>
-      <script src="https://unpkg.com/uevent@2/browser.js"></script>
-      <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
-      <script src="https://unpkg.com/photo-sphere-viewer@5/dist/photo-sphere-viewer.js"></script>
-      <script>
-        new PhotoSphereViewer.Viewer({
-          container: document.getElementById('viewer'),
-          panorama: '${panoramaUrl}',
-          defaultYaw: 0,
-          defaultPitch: 0,
-          navbar: ['zoom', 'fullscreen'],
-        });
-      </script>
-    </body>
-    </html>
-  `;
+    // Renderer
+    var renderer = new Renderer({ gl, clearColor: 0x000000 });
+    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    rendererRef.current = renderer;
+
+    // Scene
+    var scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Camera
+    var camera = new THREE.PerspectiveCamera(
+      75,
+      gl.drawingBufferWidth / gl.drawingBufferHeight,
+      0.1,
+      500,
+    );
+    camera.position.set(0, 0, 0);
+    camera.target = new THREE.Vector3(1, 0, 0);
+    camera.lookAt(camera.target);
+    cameraRef.current = camera;
+
+    // Sphere (inside-out) avec la texture 360
+    var loader  = new TextureLoader();
+    var texture = await new Promise(function(resolve, reject) {
+      loader.load(
+        ROOMS[roomIndex].asset,
+        function(tex) { resolve(tex); },
+        undefined,
+        function(err) { reject(err); },
+      );
+    });
+
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+
+    var geometry = new THREE.SphereGeometry(200, 60, 40);
+    geometry.scale(-1, 1, 1); // retourner la sphere de l interieur
+    var material = new THREE.MeshBasicMaterial({ map: texture });
+    var mesh     = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+    meshRef.current = mesh;
+
+    setLoading(false);
+
+    // Boucle de rendu
+    function animate() {
+      animRef.current = requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+      gl.endFrameEXP();
+    }
+    animate();
+  }
+
+  function cleanup() {
+    if (animRef.current) { cancelAnimationFrame(animRef.current); }
+    if (rendererRef.current) { rendererRef.current.dispose(); }
+    rendererRef.current = null;
+    sceneRef.current    = null;
+    cameraRef.current   = null;
+    meshRef.current     = null;
+  }
+
+  function goToRoom(i) {
+    if (i === roomIndex) return;
+    cleanup();
+    setRoomIndex(i);
+    setLoading(true);
+    setGlKey(function(k) { return k + 1; });
+  }
 
   return (
     <View style={styles.container}>
-      <Animated.Image
-        source={{ uri: roomImages[selectedRoom] }}
-        style={[styles.image, { transform: imageOffset.getTranslateTransform() }]} {...panResponder.panHandlers} />
+      <GLView
+        key={glKey}
+        style={StyleSheet.absoluteFill}
+        onContextCreate={onContextCreate}
+        {...panResponder.panHandlers}
+      />
+
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C48A5A" />
+          <Text style={styles.loadingText}>Chargement du panorama...</Text>
+        </View>
+      )}
 
       {/* Header */}
-      <View style={styles.headerRow}>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
-          <Text style={styles.headerBtnText}>←</Text>
+      <View style={styles.header} pointerEvents="box-none">
+        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
+          onPress={function() { cleanup(); navigation.goBack(); }}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={styles.headerTitle}>Visite Guidée 3D</Text>
-          <Text style={styles.headerSubtitle}>Salon Principal - Villa Nguinth</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Visite 360deg</Text>
+          <Text style={styles.headerSubtitle}>{ROOMS[roomIndex].label}</Text>
         </View>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
-          <Ionicons name="settings" size={22} color="#fff" />
+        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
+          onPress={function() { navigation.navigate('Parametres'); }}>
+          <Ionicons name="settings-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {/* Bloc central navigation */}
-
-      {/* Bloc central : cercle overlay en haut */}
-
-      <View style={styles.centerBlock}>
-        <View style={styles.centralOverlayWrapper}>
-          <View style={styles.centralCircleLarge} />
-          <View style={styles.centralCircleSmall} />
+      {/* Indice glisser */}
+      {!loading && (
+        <View style={styles.swipeHint} pointerEvents="none">
+          <Ionicons name="hand-left-outline" size={14} color="rgba(255,255,255,0.85)" />
+          <Text style={styles.swipeHintText}>Glissez pour explorer</Text>
         </View>
-      </View>
-
-
-      {/* Carré navigation centré sur la table */}
-
-      <View style={styles.dpadContainerMaquette}>
-        <View style={styles.dpadGridRow}>
-          <View style={styles.dpadGridCell} />
-          <TouchableOpacity style={styles.dpadBtnMaquette} onPress={() => handleDpad('up')}><Text style={styles.dpadBtnArrow}>▲</Text></TouchableOpacity>
-          <View style={styles.dpadGridCell} />
-        </View>
-        <View style={styles.dpadGridRow}>
-          <TouchableOpacity style={styles.dpadBtnMaquette} onPress={() => handleDpad('left')}><Text style={styles.dpadBtnArrow}>◀</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dpadBtnCenter}><Text style={styles.dpadBtnCenterText}>360°</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dpadBtnMaquette} onPress={() => handleDpad('right')}><Text style={styles.dpadBtnArrow}>▶</Text></TouchableOpacity>
-        </View>
-        <View style={styles.dpadGridRow}>
-          <View style={styles.dpadGridCell} />
-          <TouchableOpacity style={styles.dpadBtnMaquette} onPress={() => handleDpad('down')}><Text style={styles.dpadBtnArrow}>▼</Text></TouchableOpacity>
-          <View style={styles.dpadGridCell} />
-        </View>
-      </View>
-      {lastDirection && (
-        <Text style={{ color: '#fff', textAlign: 'center', marginTop: 8 }}>
-          {lastDirection === 'up' && 'Vous avez appuyé sur la flèche du haut'}
-          {lastDirection === 'down' && 'Vous avez appuyé sur la flèche du bas'}
-          {lastDirection === 'left' && 'Vous avez appuyé sur la flèche de gauche'}
-          {lastDirection === 'right' && 'Vous avez appuyé sur la flèche de droite'}
-        </Text>
       )}
-      <Text style={styles.swipeText}>Glisser pour naviguer</Text>
 
-      {/* Boutons pièces juste sous le carré */}
-      <View style={styles.roomsRowMaquette}>
-        {rooms.map((room, idx) => (
-          <TouchableOpacity
-            key={room}
-            style={[styles.roomPill, selectedRoom === room ? styles.roomPillActive : styles.roomPillInactive, idx === 0 ? styles.roomPillFirst : null]}
-            onPress={() => setSelectedRoom(room)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.roomPillText, selectedRoom === room ? styles.roomPillTextActive : styles.roomPillTextInactive]}>{room}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* Pills rooms */}
+      <View style={styles.roomsRow} pointerEvents="box-none">
+        {ROOMS.map(function(room, i) {
+          var active = i === roomIndex;
+          return (
+            <TouchableOpacity
+              key={room.key}
+              style={[styles.roomPill, active ? styles.roomPillActive : styles.roomPillInactive]}
+              onPress={function() { goToRoom(i); }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name={room.icon} size={12}
+                color={active ? '#3B2A1B' : '#fff'} style={styles.roomIcon} />
+              <Text style={[styles.roomPillText,
+                active ? styles.roomPillTextActive : styles.roomPillTextInactive]}>
+                {room.key}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      {/* Encart réservation */}
-      <View style={styles.bottomRow}>
+      {/* Carte bas */}
+      <View style={styles.bottomCard} pointerEvents="box-none">
         <View style={styles.readyBox}>
-          <Text style={styles.readyTitle}>Prêt à réserver ?</Text>
-          <Text style={styles.readyDesc}>Visitez, craquez, emménagez.</Text>
+          <Text style={styles.readyTitle}>Pret a reserver ?</Text>
+          <Text style={styles.readyDesc}>Visitez, craquez, emmenagez.</Text>
         </View>
-        <TouchableOpacity style={styles.reserveBtn} activeOpacity={0.8}>
-          <Text style={styles.reserveBtnText}>Réserver</Text>
+        <TouchableOpacity
+          style={styles.reserveBtn}
+          activeOpacity={0.8}
+          onPress={function() {
+            cleanup();
+            navigation.navigate('ReservationScreen',
+              { property: route && route.params ? route.params.property : null });
+          }}
+        >
+          <Text style={styles.reserveBtnText}>Reserver</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Panorama 360° Salon */}
-      <View style={{flex: 1, width: '100%', height: 320, marginTop: 16, borderRadius: 18, overflow: 'hidden'}}>
-        <WebView
-          originWhitelist={["*"]}
-          source={{ html: panoramaHtml }}
-          style={{flex: 1, backgroundColor: 'transparent'}}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          allowFileAccess={true}
-          allowUniversalAccessFromFileURLs={true}
-          mixedContentMode="always"
-        />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    position: 'relative',
+var styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    alignItems: 'center', justifyContent: 'center', zIndex: 99,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-    opacity: 0.85,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 32,
-    marginHorizontal: 18,
-    zIndex: 2,
+  loadingText: { color: '#fff', marginTop: 12, fontSize: 14 },
+  header: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 20,
   },
   headerBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.32)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  headerBtnText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  headerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
+  swipeHint: {
+    position: 'absolute', top: '48%', alignSelf: 'center',
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 7, zIndex: 10,
   },
-  headerTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15.5,
-    textAlign: 'center',
-    letterSpacing: 0.2,
-  },
-  headerSubtitle: {
-    color: '#fff',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 2,
-    opacity: 0.85,
-  },
-  centerBlock: {
-    alignItems: 'center',
-    marginTop: 38,
-    marginBottom: 16,
-    zIndex: 1,
-    position: 'relative',
-    minHeight: 260,
-    justifyContent: 'center',
-  },
-  centralOverlayWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    width: 220,
-    height: 220,
-  },
-  centralCircleLarge: {
-    position: 'absolute',
-    top: 100,
-    left: 10,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'transparent',
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.18)',
-    zIndex: 0,
-  },
-  centralCircleSmall: {
-    position: 'absolute',
-    top: 175,
-    left: 85,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'transparent',
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.22)',
-    zIndex: 2,
-  },
-  dpadContainerMaquette: {
-    backgroundColor: 'rgba(60,40,20,0.55)',
-    borderRadius: 32,
-    width: 146,
-    height: 146,
-    alignSelf: 'flex-start',
-    marginLeft: 24,
-    marginTop: 0,
-    marginBottom: 0,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  dpadGridRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flex: 1,
-  },
-  dpadGridCell: {
-    flex: 1,
-  },
-  dpadBtnMaquette: {
-    backgroundColor: 'rgba(0,0,0,0.22)',
-    borderRadius: 16,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.10,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dpadBtnArrow: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  dpadBtnCenter: {
-    backgroundColor: '#7B4B2A',
-    borderRadius: 14,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.10,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dpadBtnCenterText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-
-  roomsRowMaquette: {
-    flexDirection: 'row',
-    marginBottom: 18,
-    marginTop: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  dpadRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dpadBtn: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    margin: 4,
-    minWidth: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.10,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dpadBtn360: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    margin: 4,
-    minWidth: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.10,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dpadBtnText: {
-    color: '#3B2A1B',
-    fontWeight: 'bold',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  swipeText: {
-    color: '#fff',
-    fontSize: 13,
-    marginTop: 10,
-    marginBottom: 2,
-    textAlign: 'center',
-    opacity: 0.8,
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
+  swipeHintText: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginLeft: 7 },
   roomsRow: {
-    flexDirection: 'row',
-    marginBottom: 18,
-    marginTop: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
+    position: 'absolute', bottom: 110, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'center',
+    zIndex: 15, paddingHorizontal: 16,
   },
   roomPill: {
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    marginRight: 8,
-    minWidth: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
+    flexDirection: 'row', alignItems: 'center', borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8, marginHorizontal: 4, borderWidth: 1.5,
   },
-  roomPillFirst: {
-    marginLeft: 8,
+  roomPillActive:   { backgroundColor: '#fff',            borderColor: '#fff' },
+  roomPillInactive: { backgroundColor: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.25)' },
+  roomIcon: { marginRight: 5 },
+  roomPillText:         { fontWeight: '700', fontSize: 12 },
+  roomPillTextActive:   { color: '#3B2A1B' },
+  roomPillTextInactive: { color: '#fff' },
+  bottomCard: {
+    position: 'absolute', bottom: 24, left: 16, right: 16,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(30,18,8,0.9)', borderRadius: 20,
+    padding: 16, zIndex: 20,
   },
-  roomPillActive: {
-    backgroundColor: '#fff',
-    borderColor: '#fff',
-  },
-  roomPillInactive: {
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  roomPillText: {
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  roomPillTextActive: {
-    color: '#3B2A1B',
-  },
-  roomPillTextInactive: {
-    color: '#fff',
-    opacity: 0.7,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'absolute',
-    bottom: 24,
-    left: 18,
-    right: 18,
-    backgroundColor: 'rgba(34, 22, 13, 0.75)',
-    borderRadius: 18,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    elevation: 10,
-    zIndex: 100,
-  },
-  readyBox: {
-    flex: 1,
-  },
-  readyTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  readyDesc: {
-    color: '#fff',
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  reserveBtn: {
-    backgroundColor: '#C48A5A',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    marginLeft: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  reserveBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  readyBox:       { flex: 1 },
+  readyTitle:     { color: '#fff', fontWeight: 'bold', fontSize: 15, marginBottom: 3 },
+  readyDesc:      { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
+  reserveBtn:     { backgroundColor: '#C48A5A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 22, marginLeft: 12 },
+  reserveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });
