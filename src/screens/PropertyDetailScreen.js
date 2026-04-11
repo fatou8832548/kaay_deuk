@@ -21,7 +21,7 @@ export default function PropertyDetailScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={{ flex: 1 }}>
-        <Image source={{ uri: property.image }} style={[styles.image, { height: height * 0.65 }]} />
+        <Image source={{ uri: property.image }} style={[styles.image, { height: height * 0.42 }]} />
         <View style={styles.detailsOverlay}>
           <ScrollView style={styles.panelScroll} contentContainerStyle={styles.panelContent} showsVerticalScrollIndicator={false}>
             <View style={styles.panel}>
@@ -99,20 +99,20 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    top: '50%',
+    top: '36%',
     backgroundColor: 'transparent',
-    flex: 1,
     justifyContent: 'flex-end',
   },
   panelScroll: { flex: 1 },
-  panelContent: { paddingTop: 32 },
+  panelContent: { paddingTop: 0 },
   panel: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     minHeight: 400,
+    paddingTop: 28,
+    paddingHorizontal: 16,
     paddingBottom: 32,
-    marginHorizontal: 0,
     shadowColor: '#000',
     shadowOpacity: 0.10,
     shadowRadius: 12,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   visitBtnText: { color: '#3B2A1B', fontWeight: 'bold' },
   reserveBtn: { flex: 1, backgroundColor: '#C48A5A', borderRadius: 8, padding: 12, alignItems: 'center' },
   reserveBtnText: { color: '#fff', fontWeight: 'bold' },
-  section: { marginHorizontal: 16, marginTop: 18 },
+  section: { marginTop: 18 },
   sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#3B2A1B', marginBottom: 6 },
   description: { fontSize: 13, color: '#7A6A58', marginBottom: 8 },
   equipmentRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },

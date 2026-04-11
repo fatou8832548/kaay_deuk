@@ -1,157 +1,170 @@
-﻿import React, { useRef, useState } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   TouchableOpacity,
-  PanResponder,
   ActivityIndicator,
+  Image,
 } from 'react-native';
-import { GLView } from 'expo-gl';
-import { Renderer, TextureLoader } from 'expo-three';
-import * as THREE from 'three';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-// Supprime le warning texture size
-THREE.TextureLoader = TextureLoader;
-
 const ROOMS = [
-  { key: 'Salon',   icon: 'home-outline',      asset: require('../../assets/360.jpg'), label: 'Salon Principal' },
-  { key: 'Cuisine', icon: 'restaurant-outline', asset: require('../../assets/360.jpg'), label: 'Cuisine Ouverte' },
-  { key: 'Chambre', icon: 'bed-outline',        asset: require('../../assets/360.jpg'), label: 'Chambre Parentale' },
-  { key: 'SDB',     icon: 'water-outline',      asset: require('../../assets/360.jpg'), label: 'Salle de Bain' },
+  { key: 'Salon',   icon: 'home-outline',      asset: require('../../assets/360.jpg'),       label: 'Salon Principal' },
+  { key: 'Cuisine', icon: 'restaurant-outline', asset: require('../../assets/360_house.png'), label: 'Cuisine Ouverte' },
+  { key: 'Chambre', icon: 'bed-outline',        asset: require('../../assets/360_house.png'), label: 'Chambre Parentale' },
+  { key: 'SDB',     icon: 'water-outline',      asset: require('../../assets/360.jpg'),       label: 'Salle de Bain' },
 ];
 
-export default function VirtualTourScreen({ route }) {
-  const navigation = useNavigation();
-  const [roomIndex, setRoomIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [glKey, setGlKey] = useState(0);
-
-  // Three.js refs
-  const rendererRef = useRef(null);
-  const sceneRef    = useRef(null);
-  const cameraRef   = useRef(null);
-  const meshRef     = useRef(null);
-  const animRef     = useRef(null);
-  const phiRef      = useRef(Math.PI / 2);   // elevation
-  const thetaRef    = useRef(0);              // horizontal
-  const dragging    = useRef(false);
-  const lastPos     = useRef({ x: 0, y: 0 });
-
-  // PanResponder pour tourner la vue
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder:  () => true,
-    onPanResponderGrant: (_, gs) => {
-      dragging.current = true;
-      lastPos.current  = { x: gs.x0, y: gs.y0 };
-    },
-    onPanResponderMove: (_, gs) => {
-      if (!dragging.current) return;
-      var dx = gs.moveX - lastPos.current.x;
-      var dy = gs.moveY - lastPos.current.y;
-      lastPos.current = { x: gs.moveX, y: gs.moveY };
-      thetaRef.current -= dx * 0.005;
-      phiRef.current    = Math.max(0.1, Math.min(Math.PI - 0.1, phiRef.current + dy * 0.005));
-      updateCamera();
-    },
-    onPanResponderRelease: () => { dragging.current = false; },
+async function assetToDataUri(asset) {
+  var uri = Image.resolveAssetSource(asset).uri;
+  var response = await fetch(uri);
+  var blob = await response.blob();
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload  = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
+}
 
-  function updateCamera() {
-    if (!cameraRef.current) return;
-    var phi   = phiRef.current;
-    var theta = thetaRef.current;
-    cameraRef.current.target = new THREE.Vector3(
+function buildHtml(dataUri) {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#111; overflow:hidden; width:100vw; height:100vh; }
+    canvas { display:block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script>
+(function() {
+  var c = document.getElementById('c');
+  c.width  = window.innerWidth;
+  c.height = window.innerHeight;
+
+  var renderer = new THREE.WebGLRenderer({ canvas: c, antialias: false });
+  renderer.setPixelRatio(1);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  var scene  = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
+
+  var geo  = new THREE.SphereGeometry(200, 60, 40);
+  geo.scale(-1, 1, 1);
+  var mat  = new THREE.MeshBasicMaterial({ color: 0x333333 });
+  var mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+
+  var img = new Image();
+  img.onload = function() {
+    var tex = new THREE.Texture(img);
+    tex.needsUpdate = true;
+    mat.map   = tex;
+    mat.color = new THREE.Color(0xffffff);
+    mat.needsUpdate = true;
+  };
+  img.src = '${dataUri}';
+
+  var lon = 0, lat = 0, px = 0, py = 0, touching = false;
+
+  document.addEventListener('touchstart', function(e) {
+    touching = true;
+    px = e.touches[0].clientX;
+    py = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (!touching) return;
+    lon -= (e.touches[0].clientX - px) * 0.3;
+    lat += (e.touches[0].clientY - py) * 0.15;
+    px = e.touches[0].clientX;
+    py = e.touches[0].clientY;
+    lat = Math.max(-85, Math.min(85, lat));
+  }, { passive: true });
+  document.addEventListener('touchend', function() { touching = false; });
+
+  (function animate() {
+    requestAnimationFrame(animate);
+    var phi   = THREE.MathUtils.degToRad(90 - lat);
+    var theta = THREE.MathUtils.degToRad(lon);
+    camera.lookAt(
       Math.sin(phi) * Math.cos(theta),
       Math.cos(phi),
-      Math.sin(phi) * Math.sin(theta),
+      Math.sin(phi) * Math.sin(theta)
     );
-    cameraRef.current.lookAt(cameraRef.current.target);
-  }
+    renderer.render(scene, camera);
+  })();
+})();
+</script>
+</body>
+</html>`;
+}
 
-  async function onContextCreate(gl) {
+export default function VirtualTourScreen({ route }) {
+  var navigation = useNavigation();
+  var [roomIndex, setRoomIndex] = useState(0);
+  var [webviewKey, setWebviewKey] = useState(0);
+  var [loading, setLoading] = useState(true);
+  var [dataUris, setDataUris] = useState({});
+
+  // Precharge les 4 images simultanement au montage
+  useEffect(function() {
+    var cancelled = false;
     setLoading(true);
+    Promise.all(
+      ROOMS.map(function(room, i) {
+        return assetToDataUri(room.asset).then(function(uri) {
+          return { i: i, uri: uri };
+        });
+      })
+    )
+      .then(function(results) {
+        if (cancelled) return;
+        var map = {};
+        results.forEach(function(r) { map[r.i] = r.uri; });
+        setDataUris(map);
+        setLoading(false);
+      })
+      .catch(function(err) {
+        console.warn('Erreur chargement panorama', err);
+        if (!cancelled) setLoading(false);
+      });
+    return function() { cancelled = true; };
+  }, []);
 
-    // Renderer
-    var renderer = new Renderer({ gl, clearColor: 0x000000 });
-    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-    rendererRef.current = renderer;
-
-    // Scene
-    var scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    // Camera
-    var camera = new THREE.PerspectiveCamera(
-      75,
-      gl.drawingBufferWidth / gl.drawingBufferHeight,
-      0.1,
-      500,
-    );
-    camera.position.set(0, 0, 0);
-    camera.target = new THREE.Vector3(1, 0, 0);
-    camera.lookAt(camera.target);
-    cameraRef.current = camera;
-
-    // Sphere (inside-out) avec la texture 360
-    var loader  = new TextureLoader();
-    var texture = await new Promise(function(resolve, reject) {
-      loader.load(
-        ROOMS[roomIndex].asset,
-        function(tex) { resolve(tex); },
-        undefined,
-        function(err) { reject(err); },
-      );
-    });
-
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-
-    var geometry = new THREE.SphereGeometry(200, 60, 40);
-    geometry.scale(-1, 1, 1); // retourner la sphere de l interieur
-    var material = new THREE.MeshBasicMaterial({ map: texture });
-    var mesh     = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-    meshRef.current = mesh;
-
-    setLoading(false);
-
-    // Boucle de rendu
-    function animate() {
-      animRef.current = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-      gl.endFrameEXP();
-    }
-    animate();
-  }
-
-  function cleanup() {
-    if (animRef.current) { cancelAnimationFrame(animRef.current); }
-    if (rendererRef.current) { rendererRef.current.dispose(); }
-    rendererRef.current = null;
-    sceneRef.current    = null;
-    cameraRef.current   = null;
-    meshRef.current     = null;
-  }
+  var currentDataUri = dataUris[roomIndex];
+  var htmlContent    = currentDataUri ? buildHtml(currentDataUri) : null;
 
   function goToRoom(i) {
     if (i === roomIndex) return;
-    cleanup();
     setRoomIndex(i);
-    setLoading(true);
-    setGlKey(function(k) { return k + 1; });
+    setWebviewKey(function(k) { return k + 1; });
   }
 
   return (
     <View style={styles.container}>
-      <GLView
-        key={glKey}
-        style={StyleSheet.absoluteFill}
-        onContextCreate={onContextCreate}
-        {...panResponder.panHandlers}
-      />
+
+      {htmlContent ? (
+        <WebView
+          key={webviewKey}
+          originWhitelist={['*']}
+          source={{ html: htmlContent }}
+          style={StyleSheet.absoluteFill}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          mixedContentMode="always"
+        />
+      ) : (
+        <View style={styles.blackBg} />
+      )}
 
       {loading && (
         <View style={styles.loadingOverlay}>
@@ -161,9 +174,9 @@ export default function VirtualTourScreen({ route }) {
       )}
 
       {/* Header */}
-      <View style={styles.header} pointerEvents="box-none">
+      <View style={styles.header}>
         <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
-          onPress={function() { cleanup(); navigation.goBack(); }}>
+          onPress={function() { navigation.goBack(); }}>
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -179,13 +192,13 @@ export default function VirtualTourScreen({ route }) {
       {/* Indice glisser */}
       {!loading && (
         <View style={styles.swipeHint} pointerEvents="none">
-          <Ionicons name="hand-left-outline" size={14} color="rgba(255,255,255,0.85)" />
+          <Ionicons name="hand-left-outline" size={14} color="rgba(255,255,255,0.9)" />
           <Text style={styles.swipeHintText}>Glissez pour explorer</Text>
         </View>
       )}
 
-      {/* Pills rooms */}
-      <View style={styles.roomsRow} pointerEvents="box-none">
+      {/* Pills */}
+      <View style={styles.roomsRow}>
         {ROOMS.map(function(room, i) {
           var active = i === roomIndex;
           return (
@@ -207,7 +220,7 @@ export default function VirtualTourScreen({ route }) {
       </View>
 
       {/* Carte bas */}
-      <View style={styles.bottomCard} pointerEvents="box-none">
+      <View style={styles.bottomCard}>
         <View style={styles.readyBox}>
           <Text style={styles.readyTitle}>Pret a reserver ?</Text>
           <Text style={styles.readyDesc}>Visitez, craquez, emmenagez.</Text>
@@ -216,7 +229,6 @@ export default function VirtualTourScreen({ route }) {
           style={styles.reserveBtn}
           activeOpacity={0.8}
           onPress={function() {
-            cleanup();
             navigation.navigate('ReservationScreen',
               { property: route && route.params ? route.params.property : null });
           }}
@@ -229,13 +241,14 @@ export default function VirtualTourScreen({ route }) {
 }
 
 var styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container:      { flex: 1, backgroundColor: '#000' },
+  blackBg:        { flex: 1, backgroundColor: '#111' },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.75)',
     alignItems: 'center', justifyContent: 'center', zIndex: 99,
   },
-  loadingText: { color: '#fff', marginTop: 12, fontSize: 14 },
+  loadingText:    { color: '#fff', marginTop: 12, fontSize: 14 },
   header: {
     position: 'absolute', top: 0, left: 0, right: 0,
     paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
@@ -247,8 +260,8 @@ var styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  headerCenter:   { flex: 1, alignItems: 'center' },
+  headerTitle:    { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   headerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
   swipeHint: {
     position: 'absolute', top: '48%', alignSelf: 'center',
@@ -256,7 +269,7 @@ var styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 7, zIndex: 10,
   },
-  swipeHintText: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginLeft: 7 },
+  swipeHintText:  { color: 'rgba(255,255,255,0.9)', fontSize: 12, marginLeft: 7 },
   roomsRow: {
     position: 'absolute', bottom: 110, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'center',
@@ -266,17 +279,16 @@ var styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 8, marginHorizontal: 4, borderWidth: 1.5,
   },
-  roomPillActive:   { backgroundColor: '#fff',            borderColor: '#fff' },
-  roomPillInactive: { backgroundColor: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.25)' },
-  roomIcon: { marginRight: 5 },
+  roomPillActive:       { backgroundColor: '#fff',            borderColor: '#fff' },
+  roomPillInactive:     { backgroundColor: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.25)' },
+  roomIcon:             { marginRight: 5 },
   roomPillText:         { fontWeight: '700', fontSize: 12 },
   roomPillTextActive:   { color: '#3B2A1B' },
   roomPillTextInactive: { color: '#fff' },
   bottomCard: {
     position: 'absolute', bottom: 24, left: 16, right: 16,
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(30,18,8,0.9)', borderRadius: 20,
-    padding: 16, zIndex: 20,
+    backgroundColor: 'rgba(30,18,8,0.9)', borderRadius: 20, padding: 16, zIndex: 20,
   },
   readyBox:       { flex: 1 },
   readyTitle:     { color: '#fff', fontWeight: 'bold', fontSize: 15, marginBottom: 3 },
