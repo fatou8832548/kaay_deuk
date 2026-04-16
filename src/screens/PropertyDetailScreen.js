@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions
 import { useFavorites } from '../context/FavoritesContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Linking } from 'react-native';
+import { API_CONFIG } from '../config/apiConfig';
 
 export default function PropertyDetailScreen({ route, navigation }) {
   const { property } = route.params;
@@ -10,26 +11,57 @@ export default function PropertyDetailScreen({ route, navigation }) {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const favorite = isFavorite(property.id);
 
+  // Récupérer les données de l'API (original) ou les données transformées
+  const data = property.original || property;
+  
+  // Extraire les informations
+  const titre = data.titre || property.title || 'Maison Familiale';
+  const description = data.description || property.description || 'Propriété magnifique';
+  const prix = data.prix || parseInt(property.price) || 250000;
+  const priceFormatted = `${prix.toLocaleString('fr-FR')} FCFA/mois`;
+  const adresse = data.adresse || property.location || 'Adresse non disponible';
+  const ville = data.ville || '';
+  const fullLocation = ville ? `${adresse} (${ville})` : adresse;
+  const superficie = data.superficie || property.superficie || 'N/A';
+  const nombrePieces = data.nombrePieces || property.nombrePieces || 'N/A';
+  const disponible = data.disponible !== false;
+  const caution = data.caution || 'N/A';
+  
+  // Récupérer l'image principale
+  const mainImage = data.images && data.images[0]?.url 
+    ? `${API_CONFIG.BASE_URL}${data.images[0].url}`
+    : property.image;
+  
+  // Récupérer les équipements de la première image
+  const equipements = data && data.equipements ? data.equipements : {};
+
   // Fonction pour ouvrir Google Maps
   const openMaps = () => {
-    const address = encodeURIComponent(property.location || 'Ngor, Thiès');
+    const address = encodeURIComponent(fullLocation);
     const url = `https://www.google.com/maps/search/?api=1&query=${address}`;
-    console.log('MAPS URL:', url); // Debug
     Linking.openURL(url);
   };
+
+  // Afficher les équipements disponibles
+  const equipementsArray = [
+    { key: 'wifiHauteVitesse', label: 'WiFi Haute Vitesse' },
+    { key: 'garagePrivé', label: 'Garage Privé' },
+    { key: 'sécurité24h7', label: 'Sécurité 24/7' },
+    { key: 'climatisation', label: 'Climatisation' },
+  ].filter(item => equipements[item.key]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={{ flex: 1 }}>
-        <Image source={{ uri: property.image }} style={[styles.image, { height: height * 0.42 }]} />
+        <Image source={{ uri: mainImage }} style={[styles.image, { height: height * 0.42 }]} />
         <View style={styles.detailsOverlay}>
           <ScrollView style={styles.panelScroll} contentContainerStyle={styles.panelContent} showsVerticalScrollIndicator={false}>
             <View style={styles.panel}>
               {/* Titre, lieu, favori */}
               <View style={styles.headerRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.title}>{property.title || 'Maison Familiale Lumineuse'}</Text>
-                  <Text style={styles.location}>{property.location || 'Ngor, Thiès'}</Text>
+                  <Text style={styles.title}>{titre}</Text>
+                  <Text style={styles.location}>{fullLocation}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.favoriteBtn}
@@ -40,42 +72,72 @@ export default function PropertyDetailScreen({ route, navigation }) {
                   <Text style={{ color: '#C48A5A', fontWeight: 'bold', fontSize: 20 }}>{favorite ? '♥' : '♡'}</Text>
                 </TouchableOpacity>
               </View>
-              {/* Prix, badge disponible */}
+
+              {/* Prix, caractéristiques et badge */}
               <View style={styles.priceRow}>
-                <Text style={styles.price}>{property.price || '250 000 FCFA'}</Text>
-                <View style={styles.statusBadge}><Text style={styles.statusText}>Disponible</Text></View>
+                <Text style={styles.price}>{priceFormatted}</Text>
+                {disponible && <View style={styles.statusBadge}><Text style={styles.statusText}>Disponible</Text></View>}
               </View>
+
+              {/* Caractéristiques */}
+              <View style={styles.featureRow}>
+                <View style={styles.featureBox}>
+                  <Text style={styles.featureLabel}>Pièces</Text>
+                  <Text style={styles.featureValue}>{nombrePieces}</Text>
+                </View>
+                <View style={styles.featureBox}>
+                  <Text style={styles.featureLabel}>Superficie</Text>
+                  <Text style={styles.featureValue}>{superficie} m²</Text>
+                </View>
+                <View style={styles.featureBox}>
+                  <Text style={styles.featureLabel}>Caution</Text>
+                  <Text style={styles.featureValue}>{typeof caution === 'number' ? `${caution.toLocaleString('fr-FR')} F` : caution}</Text>
+                </View>
+              </View>
+
               {/* Boutons Visite 3D et Réserver */}
               <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.visitBtn} onPress={() => navigation.navigate('VirtualTourScreen', { property })}>
+                <TouchableOpacity 
+                  style={styles.visitBtn} 
+                  onPress={() => navigation.navigate('VirtualTourScreen', { property })}
+                >
                   <Text style={styles.visitBtnText}>Visite 3D</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.reserveBtn} onPress={() => navigation.navigate('ReservationScreen', { property })}>
+                <TouchableOpacity 
+                  style={styles.reserveBtn} 
+                  onPress={() => navigation.navigate('ReservationScreen', { property })}
+                >
                   <Text style={styles.reserveBtnText}>Réserver</Text>
                 </TouchableOpacity>
               </View>
+
               {/* Description */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Description du bien</Text>
-                <Text style={styles.description}>
-                  Cette superbe maison vous séduira dans le quartier calme de Ngor, grâce à la qualité de ses matériaux, son grand salon lumineux, sa piscine et ses équipements modernes. Idéale pour une famille à la recherche de confort et de tranquillité dans un quartier résidentiel.
-                </Text>
+                <Text style={styles.description}>{description}</Text>
               </View>
+
               {/* Équipements inclus */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Équipements inclus</Text>
-                <View style={styles.equipmentRow}>
-                  <View style={styles.equipmentPill}><Text style={styles.equipmentText}>WiFi Haute Vitesse</Text></View>
-                  <View style={styles.equipmentPill}><Text style={styles.equipmentText}>Garage Privé</Text></View>
-                  <View style={styles.equipmentPill}><Text style={styles.equipmentText}>Sécurité 24/7</Text></View>
-                  <View style={styles.equipmentPill}><Text style={styles.equipmentText}>Climatisation</Text></View>
+              {equipementsArray.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Équipements inclus</Text>
+                  <View style={styles.equipmentRow}>
+                    {equipementsArray.map((item) => (
+                      <View key={item.key} style={styles.equipmentPill}>
+                        <Text style={styles.equipmentText}>{item.label}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
+              )}
+
               {/* Localisation */}
               <View style={styles.section}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={styles.sectionTitle}>Localisation</Text>
-                  <TouchableOpacity onPress={openMaps}><Text style={{ color: '#B8A98A', fontWeight: 'bold', fontSize: 12 }}>Ouvrir Maps</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={openMaps}>
+                    <Text style={{ color: '#B8A98A', fontWeight: 'bold', fontSize: 12 }}>Ouvrir Maps</Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.mapPlaceholder}>
                   <View style={styles.mapCircle}>
@@ -126,6 +188,10 @@ const styles = StyleSheet.create({
   price: { fontSize: 18, fontWeight: 'bold', color: '#5C3A1E', marginRight: 12 },
   statusBadge: { backgroundColor: '#E6F4EA', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
   statusText: { fontSize: 13, color: '#4CAF50', fontWeight: 'bold' },
+  featureRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 12 },
+  featureBox: { flex: 1, backgroundColor: '#F5EBE0', borderRadius: 10, padding: 12, marginHorizontal: 4, alignItems: 'center' },
+  featureLabel: { fontSize: 12, color: '#6E6258', marginBottom: 4 },
+  featureValue: { fontSize: 16, fontWeight: 'bold', color: '#3B2A1B' },
   actionRow: { flexDirection: 'row', marginTop: 8 },
   visitBtn: { flex: 1, backgroundColor: '#F7E9D6', borderRadius: 8, padding: 12, marginRight: 8, alignItems: 'center', borderWidth: 1, borderColor: '#C48A5A' },
   visitBtnText: { color: '#3B2A1B', fontWeight: 'bold' },

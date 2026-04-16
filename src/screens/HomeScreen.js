@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState, useEffect } from 'react';
 import { useFavorites } from '../context/FavoritesContext';
 import {
   View,
@@ -11,132 +11,101 @@ import {
   Image,
   StatusBar,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { MapPin, Bell, Search, Filter, Settings } from 'lucide-react-native';
 import SettingsScreen from './SettingsScreen';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import FilterScreen from './FilterScreen';
+import { getLogementsRecommandes, getLogements } from '../services/logementService';
+import { API_CONFIG } from '../config/apiConfig';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
 const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio', 'Villa'];
 
-const recommended = [
-  {
-    id: '1',
-    title: 'Villa moderne avec jardin',
-    location: 'Cite Lamy (Thies)',
-    price: '350 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre parentale', 'Chambre 2', 'Salle de bain', 'Jardin'],
-  },
-  {
-    id: '2',
-    title: 'Maison familiale 4 chambres',
-    location: 'Medina Fall (Thies)',
-    price: '280 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Chambre 3', 'Chambre 4', 'Salle de bain'],
-  },
-  {
-    id: '3',
-    title: 'Appartement standing neuf',
-    location: 'Thialy (Thies)',
-    price: '180 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre', 'Salle de bain', 'Balcon'],
-  },
-  {
-    id: '4',
-    title: 'Studio meuble centre-ville',
-    location: 'Randoulene (Thies)',
-    price: '100 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Piece a vivre', 'Kitchenette', 'Salle d eau'],
-  },
-  {
-    id: '5',
-    title: 'Maison avec terrasse',
-    location: 'Nguinth (Thies)',
-    price: '220 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain', 'Terrasse'],
-  },
-  {
-    id: '6',
-    title: 'Villa avec piscine',
-    location: 'Keur Mousseu (Thies)',
-    price: '500 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre parentale', 'Chambre 2', 'Salle de bain', 'Piscine', 'Jardin'],
-  },
-  {
-    id: '7',
-    title: 'Chambre en colocation',
-    location: 'Mbour Thies (Thies)',
-    price: '45 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Chambre', 'Salle de bain partagee', 'Cuisine partagee'],
-  },
-  {
-    id: '8',
-    title: 'Appartement F3 lumineux',
-    location: 'Cite Ballabey (Thies)',
-    price: '160 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain'],
-  },
-  {
-    id: '9',
-    title: 'Maison plain-pied',
-    location: 'Tivaoune Peul (Thies)',
-    price: '130 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Salle de bain', 'Cour'],
-  },
-  {
-    id: '10',
-    title: 'Studio proche universite',
-    location: 'Diakhao (Thies)',
-    price: '80 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Piece a vivre', 'Kitchenette', 'Salle d eau'],
-  },
-  {
-    id: '11',
-    title: 'Grande maison avec cour',
-    location: 'Leona (Thies)',
-    price: '200 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Chambre 3', 'Salle de bain', 'Grande cour'],
-  },
-  {
-    id: '12',
-    title: 'Appartement neuf F2',
-    location: 'Santhiaba (Thies)',
-    price: '140 000 FCFA/mois',
-    image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
-    rooms: ['Salon', 'Cuisine', 'Chambre', 'Salle de bain'],
-  },
-];
-
 export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tout');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [logementsData, setLogementsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
+  // Récupérer les logements recommandés au montage du composant
+  useEffect(() => {
+    fetchLogementsRecommandes();
+  }, []);
+
+  // Refetcher les données chaque fois qu'on revient sur l'écran
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchLogementsRecommandes();
+    }, [])
+  );
+
+  const fetchLogementsRecommandes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getLogementsRecommandes(12);
+      console.log('Logements recommandés récupérés:', response);
+      
+      // Déterminer la structure de la réponse (peut être imbriquée)
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response.data) {
+        if (Array.isArray(response.data)) {
+          data = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          data = response.data.data; // Structure imbriquée
+        }
+      }
+      
+      // Vérifier que data est bien un array
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('Aucun logement trouvé ou format invalide');
+      }
+      
+      // Transformer les données de l'API pour correspondre au format attendu
+      const transformed = data.map(logement => ({
+        id: logement.id.toString(),
+        title: logement.titre,
+        location: `${logement.adresse} (${logement.ville})`,
+        price: `${logement.prix.toLocaleString('fr-FR')} FCFA/mois`,
+        image: `${API_CONFIG.BASE_URL}${logement.images && logement.images.length > 0 ? logement.images[0].url : ''}`,
+        rooms: [],
+        original: logement, // Garder les données originales
+      }));
+      
+      setLogementsData(transformed);
+    } catch (err) {
+      console.error('Erreur lors de la récupération des logements:', err);
+      setError(err.message);
+      setLogementsData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filtered = useMemo(() => {
-    if (activeCategory === 'Tout') return recommended;
-    return recommended.filter((item) => item.title.toLowerCase().includes(activeCategory.toLowerCase()));
-  }, [activeCategory]);
+    if (activeCategory === 'Tout') return logementsData;
+    return logementsData.filter((item) => 
+      item.title.toLowerCase().includes(activeCategory.toLowerCase())
+    );
+  }, [activeCategory, logementsData]);
 
   const renderCard = ({ item }) => {
     const favorite = isFavorite(item.id);
     return (
-      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}>
+      <TouchableOpacity 
+        style={styles.card} 
+        onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}
+      >
         <Image source={{ uri: item.image }} style={styles.cardImage} />
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle}>{item.title}</Text>
@@ -238,19 +207,36 @@ export default function HomeScreen() {
 
       <View style={styles.recommendedHeader}>
         <Text style={styles.recommendedTitle}>Recommandés</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={fetchLogementsRecommandes}>
           <Text style={styles.seeAll}>Voir tout</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCard}
-        numColumns={2}
-        contentContainerStyle={styles.cardsList}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#C48A5A" />
+          <Text style={styles.loadingText}>Chargement des logements...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Erreur: {error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={fetchLogementsRecommandes}
+          >
+            <Text style={styles.retryButtonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCard}
+          numColumns={2}
+          contentContainerStyle={styles.cardsList}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       <FilterScreen 
         visible={filterModalVisible}
@@ -460,5 +446,40 @@ const styles = StyleSheet.create({
   favoriteText: {
     fontSize: 14,
     color: '#3B2A1B',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6E6258',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#C1272D',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#C48A5A',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,24 +10,29 @@ import {
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { API_CONFIG } from '../config/apiConfig';
 
-const ROOMS = [
-  { key: 'Salon',   icon: 'home-outline',      asset: require('../../assets/360.jpg'),       label: 'Salon Principal' },
-  { key: 'Cuisine', icon: 'restaurant-outline', asset: require('../../assets/360_house.png'), label: 'Cuisine Ouverte' },
-  { key: 'Chambre', icon: 'bed-outline',        asset: require('../../assets/360_house.png'), label: 'Chambre Parentale' },
-  { key: 'SDB',     icon: 'water-outline',      asset: require('../../assets/360.jpg'),       label: 'Salle de Bain' },
-];
-
-async function assetToDataUri(asset) {
-  var uri = Image.resolveAssetSource(asset).uri;
-  var response = await fetch(uri);
-  var blob = await response.blob();
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload  = function() { resolve(reader.result); };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+// Charger image depuis URL
+async function urlToDataUri(urlPath) {
+  try {
+    const fullUrl = urlPath.startsWith('http') 
+      ? urlPath 
+      : `${API_CONFIG.BASE_URL}${urlPath}`;
+    
+    const response = await fetch(fullUrl);
+    if (!response.ok) throw new Error('Erreur téléchargement');
+    const blob = await response.blob();
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Erreur conversion URL:', error);
+    throw error;
+  }
 }
 
 function buildHtml(dataUri) {
@@ -114,14 +119,43 @@ export default function VirtualTourScreen({ route }) {
   var [webviewKey, setWebviewKey] = useState(0);
   var [loading, setLoading] = useState(true);
   var [dataUris, setDataUris] = useState({});
+  var [rooms, setRooms] = useState([]);
 
-  // Precharge les 4 images simultanement au montage
+  // Initialiser les pièces depuis l'API
   useEffect(function() {
+    const property = route && route.params && route.params.property;
+    const data = property?.original || property;
+    
+    if (data && data.images3D && Array.isArray(data.images3D)) {
+      // Trier par ordreAffichage
+      const sortedImages = [...data.images3D].sort((a, b) => 
+        (a.ordreAffichage || 0) - (b.ordreAffichage || 0)
+      );
+      
+      const newRooms = sortedImages.map((img, idx) => ({
+        key: img.titre || `Pièce ${idx + 1}`,
+        icon: 'home-outline',
+        url: img.url,
+        label: img.titre || `Visite ${idx + 1}`,
+      }));
+      
+      setRooms(newRooms);
+    }
+  }, [route]);
+
+  // Charger les images
+  useEffect(function() {
+    if (rooms.length === 0) {
+      setLoading(false);
+      return;
+    }
+    
     var cancelled = false;
     setLoading(true);
+    
     Promise.all(
-      ROOMS.map(function(room, i) {
-        return assetToDataUri(room.asset).then(function(uri) {
+      rooms.map(function(room, i) {
+        return urlToDataUri(room.url).then(function(uri) {
           return { i: i, uri: uri };
         });
       })
@@ -134,11 +168,12 @@ export default function VirtualTourScreen({ route }) {
         setLoading(false);
       })
       .catch(function(err) {
-        console.warn('Erreur chargement panorama', err);
+        console.warn('Erreur chargement images 3D:', err);
         if (!cancelled) setLoading(false);
       });
+    
     return function() { cancelled = true; };
-  }, []);
+  }, [rooms]);
 
   var currentDataUri = dataUris[roomIndex];
   var htmlContent    = currentDataUri ? buildHtml(currentDataUri) : null;
@@ -181,7 +216,9 @@ export default function VirtualTourScreen({ route }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Visite 360deg</Text>
-          <Text style={styles.headerSubtitle}>{ROOMS[roomIndex].label}</Text>
+          <Text style={styles.headerSubtitle}>
+            {rooms && rooms[roomIndex] ? rooms[roomIndex].label : 'Panorama'}
+          </Text>
         </View>
         <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
           onPress={function() { navigation.navigate('Parametres'); }}>
@@ -199,7 +236,7 @@ export default function VirtualTourScreen({ route }) {
 
       {/* Pills */}
       <View style={styles.roomsRow}>
-        {ROOMS.map(function(room, i) {
+        {rooms && rooms.map(function(room, i) {
           var active = i === roomIndex;
           return (
             <TouchableOpacity
