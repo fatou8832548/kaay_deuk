@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
   Alert,
   Modal,
 } from 'react-native';
@@ -16,17 +15,15 @@ import { API_CONFIG } from '../config/apiConfig';
 import { useUser } from '../context/UserContext';
 import { verifierAccesVisite3D, enregistrerVisite3D } from '../services/visite3DService';
 
-// Charger image depuis URL
+// Helpers
 async function urlToDataUri(urlPath) {
   try {
     const fullUrl = urlPath.startsWith('http')
       ? urlPath
       : `${API_CONFIG.BASE_URL}${urlPath}`;
-
     const response = await fetch(fullUrl);
-    if (!response.ok) throw new Error('Erreur téléchargement');
+    if (!response.ok) throw new Error('Erreur teleChargement');
     const blob = await response.blob();
-
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
@@ -59,20 +56,16 @@ function buildHtml(dataUri) {
   var c = document.getElementById('c');
   c.width  = window.innerWidth;
   c.height = window.innerHeight;
-
   var renderer = new THREE.WebGLRenderer({ canvas: c, antialias: false });
   renderer.setPixelRatio(1);
   renderer.setSize(window.innerWidth, window.innerHeight);
-
   var scene  = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
-
   var geo  = new THREE.SphereGeometry(200, 60, 40);
   geo.scale(-1, 1, 1);
   var mat  = new THREE.MeshBasicMaterial({ color: 0x333333 });
   var mesh = new THREE.Mesh(geo, mat);
   scene.add(mesh);
-
   var img = new Image();
   img.onload = function() {
     var tex = new THREE.Texture(img);
@@ -82,24 +75,18 @@ function buildHtml(dataUri) {
     mat.needsUpdate = true;
   };
   img.src = '${dataUri}';
-
   var lon = 0, lat = 0, px = 0, py = 0, touching = false;
-
   document.addEventListener('touchstart', function(e) {
-    touching = true;
-    px = e.touches[0].clientX;
-    py = e.touches[0].clientY;
+    touching = true; px = e.touches[0].clientX; py = e.touches[0].clientY;
   }, { passive: true });
   document.addEventListener('touchmove', function(e) {
     if (!touching) return;
     lon -= (e.touches[0].clientX - px) * 0.3;
     lat += (e.touches[0].clientY - py) * 0.15;
-    px = e.touches[0].clientX;
-    py = e.touches[0].clientY;
+    px = e.touches[0].clientX; py = e.touches[0].clientY;
     lat = Math.max(-85, Math.min(85, lat));
   }, { passive: true });
   document.addEventListener('touchend', function() { touching = false; });
-
   (function animate() {
     requestAnimationFrame(animate);
     var phi   = THREE.MathUtils.degToRad(90 - lat);
@@ -120,106 +107,149 @@ function buildHtml(dataUri) {
 export default function VirtualTourScreen({ route }) {
   var navigation = useNavigation();
   var { user } = useUser();
+
   var [roomIndex, setRoomIndex] = useState(0);
   var [webviewKey, setWebviewKey] = useState(0);
   var [loading, setLoading] = useState(true);
   var [dataUris, setDataUris] = useState({});
   var [rooms, setRooms] = useState([]);
-  varVérifier l'accès à la visite 3D
+  var [htmlContent, setHtmlContent] = useState('');
+
+  var [hasAccess, setHasAccess] = useState(false);
+  var [checkingAccess, setCheckingAccess] = useState(true);
+  var [accessInfo, setAccessInfo] = useState(null);
+  var [visitStartTime, setVisitStartTime] = useState(null);
+  var [showAccessModal, setShowAccessModal] = useState(false);
+
   useEffect(function () {
     async function checkAccess() {
       try {
         if (!user || !user.chercheur) {
           Alert.alert(
             'Connexion requise',
-            'Vous devez être connecté pour accéder aux visites 3D.',
+            'Vous devez etre connecte pour acceder aux visites 3D.',
             [{ text: 'OK', onPress: () => navigation.goBack() }]
           );
           return;
         }
-
         setCheckingAccess(true);
-        const chercheurId = user.chercheur.id;
-        const result = await verifierAccesVisite3D(chercheurId);
-
+        var chercheurId = user.chercheur.id;
+        var result = await verifierAccesVisite3D(chercheurId);
         setAccessInfo(result);
         setHasAccess(result.acces);
-
         if (!result.acces) {
           setShowAccessModal(true);
         } else {
-          // Enregistrer le début de la visite
           setVisitStartTime(Date.now());
         }
-
         setCheckingAccess(false);
       } catch (error) {
-        console.error('Erreur vérification accès:', error);
+        console.error('Erreur verification acces:', error);
         setCheckingAccess(false);
         Alert.alert(
           'Erreur',
-          'Impossible de vérifier l\'accès aux visites 3D. Veuillez réessayer.',
+          "Impossible de verifier l'acces aux visites 3D.",
           [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
       }
     }
-
     checkAccess();
   }, [user, navigation]);
 
-  // Enregistrer la visite lorsque l'utilisateur quitte
   useEffect(function () {
     return function () {
       if (hasAccess && visitStartTime && user && user.chercheur) {
-        const property = route && route.params && route.params.property;
-        const data = property?.original || property;
-
+        var property = route && route.params && route.params.property;
+        var data = (property && property.original) || property;
         if (data && data.id) {
-          const dureeVisite = Math.floor((Date.now() - visitStartTime) / 1000);
-
+          var dureeVisite = Math.floor((Date.now() - visitStartTime) / 1000);
           enregistrerVisite3D(user.chercheur.id, data.id, dureeVisite)
-            .then(() => console.log('Visite 3D enregistrée'))
-            .catch(err => console.error('Erreur enregistrement visite:', err));
+            .then(function () { console.log('Visite 3D enregistree'); })
+            .catch(function (err) { console.error('Erreur enregistrement visite:', err); });
         }
       }
     };
   }, [hasAccess, visitStartTime, user, route]);
 
-  //  [hasAccess, setHasAccess] = useState(false);
-  var [checkingAccess, setCheckingAccess] = useState(true);
-  var [accessInfo, setAccessInfo] = useState(null);
-  var [visitStartTime, setVisitStartTime] = useState(null);
-  var [showAccessModal, setShowAccessModal] = useState(false);
-
-  // Initialiser les pièces depuis l'API
   useEffect(function () {
-    const property = route && route.params && route.params.property;
-    const data = property?.original || property;
-
+    if (!hasAccess) return;
+    var property = route && route.params && route.params.property;
+    var data = (property && property.original) || property;
     if (data && data.images3D && Array.isArray(data.images3D)) {
-      //* Modal d'abonnement requis */}
+      var roomDefs = data.images3D.map(function (img, i) {
+        return {
+          key: img.label || ('Piece ' + (i + 1)),
+          label: img.label || ('Piece ' + (i + 1)),
+          icon: img.icon || 'home-outline',
+          url: img.url,
+        };
+      });
+      setRooms(roomDefs);
+    } else {
+      setRooms([{ key: 'Salon', label: 'Salon', icon: 'home-outline', url: null }]);
+      setLoading(false);
+    }
+  }, [hasAccess, route]);
+
+  useEffect(function () {
+    if (!hasAccess || rooms.length === 0) return;
+    var room = rooms[roomIndex];
+    if (!room) return;
+    if (!room.url) {
+      setHtmlContent('');
+      setLoading(false);
+      return;
+    }
+    if (dataUris[roomIndex]) {
+      setHtmlContent(buildHtml(dataUris[roomIndex]));
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    urlToDataUri(room.url)
+      .then(function (uri) {
+        setDataUris(function (prev) {
+          var next = Object.assign({}, prev);
+          next[roomIndex] = uri;
+          return next;
+        });
+        setHtmlContent(buildHtml(uri));
+        setLoading(false);
+      })
+      .catch(function (err) {
+        console.error('Erreur chargement panorama:', err);
+        setLoading(false);
+      });
+  }, [hasAccess, rooms, roomIndex]);
+
+  function goToRoom(i) {
+    setRoomIndex(i);
+    setWebviewKey(function (k) { return k + 1; });
+    setLoading(true);
+  }
+
+  return (
+    <View style={styles.container}>
       <Modal
         visible={showAccessModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => { }}
+        onRequestClose={function () { }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Ionicons name="lock-closed" size={60} color="#FF9500" />
             <Text style={styles.modalTitle}>Abonnement requis</Text>
             <Text style={styles.modalMessage}>
-              {accessInfo?.gratuit === false
-                ? `Vous avez déjà effectué ${accessInfo?.nombreVisitesEffectuees} visite${accessInfo?.nombreVisitesEffectuees > 1 ? 's' : ''} 3D.`
+              {accessInfo && accessInfo.nombreVisitesEffectuees > 0
+                ? 'Vous avez deja effectue ' + accessInfo.nombreVisitesEffectuees + ' visite' + (accessInfo.nombreVisitesEffectuees > 1 ? 's' : '') + ' 3D.\n\n'
                 : ''}
-              {'\n\n'}
-              Votre première visite 3D était gratuite !{'\n'}
-              Abonnez-vous pour continuer à explorer nos logements en 3D.
+              {'Votre premiere visite 3D etait gratuite !\nAbonnez-vous pour continuer.'}
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalButtonSecondary}
-                onPress={() => {
+                onPress={function () {
                   setShowAccessModal(false);
                   navigation.goBack();
                 }}
@@ -228,10 +258,10 @@ export default function VirtualTourScreen({ route }) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalButtonPrimary}
-                onPress={() => {
+                onPress={function () {
                   setShowAccessModal(false);
                   navigation.navigate('Subscription', {
-                    nombreVisitesEffectuees: accessInfo?.nombreVisitesEffectuees || 1,
+                    nombreVisitesEffectuees: (accessInfo && accessInfo.nombreVisitesEffectuees) || 1,
                   });
                 }}
               >
@@ -242,172 +272,105 @@ export default function VirtualTourScreen({ route }) {
         </View>
       </Modal>
 
-      {
-        checkingAccess ? (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#C48A5A" />
-            <Text style={styles.loadingText}>Vérification de l'accès...</Text>
-          </View>
-        ) : hasAccess ? (
-          <>
-            {htmlContent ? (
-              <WebView
-                key={webviewKey}
-                originWhitelist={['*']}
-                source={{ html: htmlContent }}
-                style={StyleSheet.absoluteFill}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                mixedContentMode="always"
-              />
-            ) : (
-              <View style={styles.blackBg} />
-            )}
+      {checkingAccess ? (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C48A5A" />
+          <Text style={styles.loadingText}>Verification de l'acces...</Text>
+        </View>
+      ) : hasAccess ? (
+        <>
+          {htmlContent ? (
+            <WebView
+              key={webviewKey}
+              originWhitelist={['*']}
+              source={{ html: htmlContent }}
+              style={StyleSheet.absoluteFill}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              mixedContentMode="always"
+            />
+          ) : (
+            <View style={styles.blackBg} />
+          )}
 
-            {loading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#C48A5A" />
-                <Text style={styles.loadingText}>Chargement du panorama...</Text>
-              </View>
-            )}
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#C48A5A" />
+              <Text style={styles.loadingText}>Chargement du panorama...</Text>
+            </View>
+          )}
 
-            {accessInfo?.gratuit && (
-              <View style={styles.freeVisitBadge}>
-                <Ionicons name="gift" size={16} color="#FFF" />
-                <Text style={styles.freeVisitText}>Première visite gratuite !</Text>
-              </View>
-          setLoading(false);
-            return;
-    }
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
-                onPress={function () { navigation.goBack(); }}>
-                <Ionicons name="arrow-back" size={20} color="#fff" />
-              </TouchableOpacity>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>Visite 360deg</Text>
-                <Text style={styles.headerSubtitle}>
-                  {rooms && rooms[roomIndex] ? rooms[roomIndex].label : 'Panorama'}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
-                onPress={function () { navigation.navigate('Parametres'); }}>
-                <Ionicons name="settings-outline" size={20} color="#fff" />
-              </TouchableOpacity>
-              setLoading(false);
-      })
-              {/* Indice glisser */}
-              {!loading && (
-                <View style={styles.swipeHint} pointerEvents="none">
-                  <Ionicons name="hand-left-outline" size={14} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.swipeHintText}>Glissez pour explorer</Text>
-                </View>
-              )}
+          {accessInfo && accessInfo.gratuit && (
+            <View style={styles.freeVisitBadge}>
+              <Ionicons name="gift" size={16} color="#FFF" />
+              <Text style={styles.freeVisitText}>Premiere visite gratuite !</Text>
+            </View>
+          )}
 
-              {/* Pills */}
-              <View style={styles.roomsRow}>
-                {rooms && rooms.map(function (room, i) {
-                  var active = i === roomIndex;
-                  return (
-                    <TouchableOpacity
-                      key={room.key}
-                      style={[styles.roomPill, active ? styles.roomPillActive : styles.roomPillInactive]}
-                      onPress={function () { goToRoom(i); }}
-                      activeOpacity={0.8}
-                    >
-                      <Ionicons name={room.icon} size={12}
-                        color={active ? '#3B2A1B' : '#fff'} style={styles.roomIcon} />
-                      <Text style={[styles.roomPillText,
-                      active ? styles.roomPillTextActive : styles.roomPillTextInactive]}>
-                        {room.key}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Carte bas */}
-              <View style={styles.bottomCard}>
-                <View style={styles.readyBox}>
-                  <Text style={styles.readyTitle}>Pret a reserver ?</Text>
-                  <Text style={styles.readyDesc}>Visitez, craquez, emmenagez.</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.reserveBtn}
-                  activeOpacity={0.8}
-                  onPress={function () {
-                    navigation.navigate('ReservationScreen',
-                      { property: route && route.params ? route.params.property : null });
-                  }}
-                >
-                  <Text style={styles.reserveBtnText}>Reserver</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-      ) : null}chableOpacity>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
+              onPress={function () { navigation.goBack(); }}>
+              <Ionicons name="arrow-back" size={20} color="#fff" />
+            </TouchableOpacity>
             <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>Visite 360deg</Text>
+              <Text style={styles.headerTitle}>Visite 360</Text>
               <Text style={styles.headerSubtitle}>
-                {rooms && rooms[roomIndex] ? rooms[roomIndex].label : 'Panorama'}
+                {rooms[roomIndex] ? rooms[roomIndex].label : 'Panorama'}
               </Text>
             </View>
             <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}
               onPress={function () { navigation.navigate('Parametres'); }}>
               <Ionicons name="settings-outline" size={20} color="#fff" />
             </TouchableOpacity>
-          </View >
+          </View>
 
-            {/* Indice glisser */ }
-        {
-          !loading && (
+          {!loading && (
             <View style={styles.swipeHint} pointerEvents="none">
               <Ionicons name="hand-left-outline" size={14} color="rgba(255,255,255,0.9)" />
               <Text style={styles.swipeHintText}>Glissez pour explorer</Text>
             </View>
-          )
-        }
+          )}
 
-        {/* Pills */ }
-        <View style={styles.roomsRow}>
-          {rooms && rooms.map(function (room, i) {
-            var active = i === roomIndex;
-            return (
-              <TouchableOpacity
-                key={room.key}
-                style={[styles.roomPill, active ? styles.roomPillActive : styles.roomPillInactive]}
-                onPress={function () { goToRoom(i); }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name={room.icon} size={12}
-                  color={active ? '#3B2A1B' : '#fff'} style={styles.roomIcon} />
-                <Text style={[styles.roomPillText,
-                active ? styles.roomPillTextActive : styles.roomPillTextInactive]}>
-                  {room.key}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Carte bas */ }
-        <View style={styles.bottomCard}>
-          <View style={styles.readyBox}>
-            <Text style={styles.readyTitle}>Pret a reserver ?</Text>
-            <Text style={styles.readyDesc}>Visitez, craquez, emmenagez.</Text>
+          <View style={styles.roomsRow}>
+            {rooms.map(function (room, i) {
+              var active = i === roomIndex;
+              return (
+                <TouchableOpacity
+                  key={room.key}
+                  style={[styles.roomPill, active ? styles.roomPillActive : styles.roomPillInactive]}
+                  onPress={function () { goToRoom(i); }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name={room.icon} size={12}
+                    color={active ? '#3B2A1B' : '#fff'} style={styles.roomIcon} />
+                  <Text style={[styles.roomPillText,
+                    active ? styles.roomPillTextActive : styles.roomPillTextInactive]}>
+                    {room.key}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <TouchableOpacity
-            style={styles.reserveBtn}
-            activeOpacity={0.8}
-            onPress={function () {
-              navigation.navigate('ReservationScreen',
-                { property: route && route.params ? route.params.property : null });
-            }}
-          >
-            <Text style={styles.reserveBtnText}>Reserver</Text>
-          </TouchableOpacity>
-        </View>
-    </View >
+
+          <View style={styles.bottomCard}>
+            <View style={styles.readyBox}>
+              <Text style={styles.readyTitle}>Pret a reserver ?</Text>
+              <Text style={styles.readyDesc}>Visitez, craquez, emmenagez.</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.reserveBtn}
+              activeOpacity={0.8}
+              onPress={function () {
+                navigation.navigate('ReservationScreen',
+                  { property: route && route.params ? route.params.property : null });
+              }}
+            >
+              <Text style={styles.reserveBtnText}>Reserver</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : null}
+    </View>
   );
 }
 
@@ -472,63 +435,35 @@ var styles = StyleSheet.create({
   },
   freeVisitText: { color: '#FFF', fontSize: 13, fontWeight: 'bold', marginLeft: 8 },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center', alignItems: 'center', padding: 20,
   },
   modalContent: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 30,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
+    backgroundColor: '#FFF', borderRadius: 20, padding: 30,
+    alignItems: 'center', width: '100%', maxWidth: 400,
   },
   modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#3B2A1B',
-    marginTop: 20,
-    marginBottom: 15,
+    fontSize: 24, fontWeight: 'bold', color: '#3B2A1B',
+    marginTop: 20, marginBottom: 15,
   },
   modalMessage: {
-    fontSize: 15,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 25,
+    fontSize: 15, color: '#666', textAlign: 'center',
+    lineHeight: 22, marginBottom: 25,
   },
-  modalButtons: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 10,
-  },
+  modalButtons: { flexDirection: 'row', width: '100%', gap: 10 },
   modalButtonSecondary: {
-    flex: 1,
-    backgroundColor: '#E0E0E0',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
+    flex: 1, backgroundColor: '#E0E0E0',
+    paddingVertical: 14, borderRadius: 10, alignItems: 'center',
   },
-  modalButtonSecondaryText: {
-    color: '#3B2A1B',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  modalButtonSecondaryText: { color: '#3B2A1B', fontSize: 16, fontWeight: '600' },
   modalButtonPrimary: {
-    flex: 1,
-    backgroundColor: '#FF9500',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
+    flex: 1, backgroundColor: '#FF9500',
+    paddingVertical: 14, borderRadius: 10, alignItems: 'center',
   },
-  modalButtonPrimaryText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+  modalButtonPrimaryText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  reserveBtn: {
+    backgroundColor: '#C48A5A', borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 22, marginLeft: 12,
   },
-  reserveBtn: { backgroundColor: '#C48A5A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 22, marginLeft: 12 },
   reserveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });
