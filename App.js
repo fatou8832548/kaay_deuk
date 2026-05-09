@@ -21,23 +21,41 @@ function AppContent() {
   const [loading, setLoading] = useState(false);
   const { user, setUser } = useUser();
 
-  // Vérifier si l'utilisateur est déjà connecté au démarrage
+  // Vérifier l'utilisateur au démarrage de l'app
   useEffect(() => {
-    async function checkUser() {
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-        // Si l'utilisateur est déjà connecté, aller directement à home
-        if (route === 'login' || route === 'register') {
-          setRoute('home');
+    let isComponentMounted = true;
+
+    async function initializeApp() {
+      try {
+        // Attendre que AsyncStorage soit prêt
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const currentUser = await getCurrentUser();
+        
+        if (isComponentMounted) {
+          if (currentUser) {
+            setUser(currentUser);
+            setRoute('home');
+          } else {
+            // Pas d'utilisateur, continuer avec le flow normal
+            setRoute('onboarding');
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation:', error);
+        // En cas d'erreur, continuer avec le flow normal
+        if (isComponentMounted) {
+          setRoute('onboarding');
         }
       }
     }
 
-    if (route !== 'splash' && route !== 'onboarding') {
-      checkUser();
-    }
-  }, [route]);
+    initializeApp();
+
+    return () => {
+      isComponentMounted = false;
+    };
+  }, []);
 
   const handleFinishSplash = () => {
     setRoute('onboarding');
@@ -67,20 +85,24 @@ function AppContent() {
       setLoading(true);
 
       const userData = {
-        nom: data.fullName,
+        fullName: data.fullName,
         email: data.email,
-        telephone: data.phone,
-        motDePasse: data.password,
-        typeUtilisateur: 'CHERCHEUR', // Par défaut, les nouveaux utilisateurs sont des chercheurs
+        phone: data.phone,
+        password: data.password,
       };
 
-      await registerService(userData);
+      const result = await registerService(userData);
 
-      Alert.alert(
-        'Inscription réussie',
-        'Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.',
-        [{ text: 'OK', onPress: () => setRoute('login') }]
-      );
+      if (result.utilisateur) {
+        setUser(result.utilisateur);
+        Alert.alert(
+          'Inscription réussie',
+          'Votre compte a été créé avec succès.',
+          [{ text: 'OK', onPress: () => setRoute('home') }]
+        );
+      } else {
+        Alert.alert('Erreur', 'Inscription réussie mais données utilisateur manquantes');
+      }
     } catch (error) {
       console.error('Erreur register:', error);
       Alert.alert('Erreur d\'inscription', error.message || 'Impossible de créer le compte. Veuillez réessayer.');
