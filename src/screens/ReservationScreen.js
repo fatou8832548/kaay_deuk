@@ -1,29 +1,132 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Linking, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Smartphone, CreditCard } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useReservations } from '../context/ReservationContext';
 
 const paymentOptions = [
-  { id: 'wave', label: 'Wave', icon: require('../../assets/wave.png') },
-  { id: 'orange', label: 'Orange', icon: require('../../assets/orange.png') },
-  { id: 'visa', label: 'Visa', icon: require('../../assets/visa.png') },
-  { id: 'mastercard', label: 'Mastercard', icon: require('../../assets/mastercard.png') },
+  { id: 'wave', label: 'Wave', icon: require('../../assets/wave.png'), enabled: true },
+  { id: 'orange', label: 'Orange', icon: require('../../assets/orange.png'), enabled: false },
+  { id: 'visa', label: 'Visa', icon: require('../../assets/visa.png'), enabled: false },
+  { id: 'mastercard', label: 'Mastercard', icon: require('../../assets/mastercard.png'), enabled: false },
 ];
 
 export default function ReservationScreen({ route, navigation }) {
   const property = route?.params?.property;
   const [selectedPayment, setSelectedPayment] = useState('wave');
-  const [housingFee, setHousingFee] = useState('');
-  const [reservationFee, setReservationFee] = useState('');
   const { addReservation } = useReservations();
 
-  // Calcul du total (en nombre)
-  const total = (parseInt(housingFee) || 0) + (parseInt(reservationFee) || 0);
+  // Extraire le prix du logement depuis les données reçues
+  // Le prix peut être dans property.price, property.prixMensuel, ou extraire d'une chaîne comme "150 000 XOF/mois"
+  const extractPrice = (property) => {
+    if (!property) return 0;
+
+    // Si le prix est déjà un nombre
+    if (property.prixMensuel && typeof property.prixMensuel === 'number') {
+      return property.prixMensuel;
+    }
+
+    // Si c'est une chaîne comme "150000" ou "150 000"
+    if (property.price) {
+      const priceStr = property.price.toString().replace(/\s/g, '').replace(/XOF.*$/i, '').replace(/FCFA.*$/i, '').replace(/\/.*$/i, '');
+      const numPrice = parseInt(priceStr);
+      if (!isNaN(numPrice)) return numPrice;
+    }
+
+    // Si prixMensuel est une chaîne
+    if (property.prixMensuel) {
+      const priceStr = property.prixMensuel.toString().replace(/\s/g, '').replace(/XOF.*$/i, '').replace(/FCFA.*$/i, '').replace(/\/.*$/i, '');
+      const numPrice = parseInt(priceStr);
+      if (!isNaN(numPrice)) return numPrice;
+    }
+
+    // Valeur par défaut
+    return 0;
+  };
+
+  const housingFee = extractPrice(property);
+  const reservationFee = housingFee > 0 ? Math.round(housingFee * 0.1) : 5000; // 10% du prix ou 5000 XOF par défaut
+  const total = housingFee + reservationFee;
+
+  const canContinue = total > 0;
+
+  // Fonction pour ouvrir l'application de paiement
+  const handlePaymentIconClick = async (paymentId) => {
+    // Vérifier si l'option est activée
+    const option = paymentOptions.find(opt => opt.id === paymentId);
+    if (!option?.enabled) {
+      Alert.alert(
+        'Bientôt disponible',
+        'Cette option de paiement sera disponible prochainement. Utilisez Wave pour le moment.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setSelectedPayment(paymentId);
+
+    if (paymentId === 'wave') {
+      // Essayer plusieurs deep links Wave (wavemobile:// puis wave://)
+      const waveSchemes = ['wavemobile://', 'wave://'];
+      let opened = false;
+
+      for (const scheme of waveSchemes) {
+        try {
+          await Linking.openURL(scheme);
+          opened = true;
+          break;
+        } catch (error) {
+          console.log(`Échec avec ${scheme}:`, error.message);
+        }
+      }
+
+      if (!opened) {
+        // Aucun scheme n'a fonctionné, proposer de télécharger l'app
+        Alert.alert(
+          'Wave non installé',
+          'Téléchargez l\'application Wave pour effectuer le paiement.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            {
+              text: 'Télécharger Wave',
+              onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.wave.money')
+            }
+          ]
+        );
+      }
+    } else if (paymentId === 'orange') {
+      try {
+        const canOpen = await Linking.canOpenURL('maxit://');
+        if (canOpen) {
+          await Linking.openURL('orangemoney://');
+        } else {
+          Alert.alert(
+            'Orange Money non installé',
+            'L\'application Orange Money n\'est pas installée. Voulez-vous la télécharger ?',
+            [
+              { text: 'Annuler', style: 'cancel' },
+              { text: 'Télécharger', onPress: () => Linking.openURL('') }
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('Erreur ouverture Orange Money:', error);
+      }
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      {/* Header avec bouton retour */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#3B2A1B" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Réservation</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Image source={require('../../assets/logo.png')} style={styles.logo} />
           <Text style={styles.title}>Réservation</Text>
@@ -46,40 +149,28 @@ export default function ReservationScreen({ route, navigation }) {
             <Text style={styles.stepLabel}>Validation</Text>
           </View>
 
-          {/* Fees */}
-          <View style={{marginHorizontal: 0, marginBottom: 8}}>
+          {/* Fees - Affichage des prix (non modifiables) */}
+          <View style={{ marginHorizontal: 0, marginBottom: 8 }}>
             <Text style={styles.feeLabel}>Frais de logement</Text>
-            <View style={styles.inputCard}>
+            <View style={styles.displayCard}>
               <View style={styles.feeBox}>
-                <TextInput
-                  style={{fontSize: 16, color: '#3B2A1B', minWidth: 80}}
-                  placeholder="Montant en XOF"
-                  value={housingFee}
-                  onChangeText={setHousingFee}
-                  keyboardType="numeric"
-                />
+                <Text style={styles.feeValue}>{housingFee.toLocaleString()} XOF</Text>
               </View>
             </View>
           </View>
-          <View style={{marginHorizontal: 0, marginBottom: 8}}>
-            <Text style={styles.feeLabel}>Frais de réservation</Text>
-            <View style={styles.inputCard}>
+          <View style={{ marginHorizontal: 0, marginBottom: 8 }}>
+            <Text style={styles.feeLabel}>Frais de réservation (10%)</Text>
+            <View style={styles.displayCard}>
               <View style={styles.feeBox}>
-                <TextInput
-                  style={{fontSize: 16, color: '#3B2A1B', minWidth: 80}}
-                  placeholder="Montant en XOF"
-                  value={reservationFee}
-                  onChangeText={setReservationFee}
-                  keyboardType="numeric"
-                />
+                <Text style={styles.feeValue}>{reservationFee.toLocaleString()} XOF</Text>
               </View>
             </View>
           </View>
 
           {/* Total aligné à droite, label au-dessus et en dehors */}
-          <View style={{marginBottom: 0, marginTop: 2}}>
-            <Text style={[styles.totalLabel, {textAlign: 'right', alignSelf: 'flex-end', color: '#3B2A1B', marginBottom: 2}]}>FRAIS TOTAL</Text>
-            <View style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+          <View style={{ marginBottom: 0, marginTop: 2 }}>
+            <Text style={[styles.totalLabel, { textAlign: 'right', alignSelf: 'flex-end', color: '#3B2A1B', marginBottom: 2 }]}>FRAIS TOTAL</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
               <View style={styles.totalCard}>
                 <Text style={styles.totalValue}>{total.toLocaleString()} XOF</Text>
               </View>
@@ -87,35 +178,64 @@ export default function ReservationScreen({ route, navigation }) {
           </View>
 
           {/* Payment options */}
-          <View style={{alignItems: 'center', marginBottom: 0}}>
-            <Text style={[styles.paymentTitle, {textAlign: 'center', alignSelf: 'center'}]}>Options de paiement</Text>
+          <View style={{ alignItems: 'center', marginBottom: 0 }}>
+            <Text style={[styles.paymentTitle, { textAlign: 'center', alignSelf: 'center' }]}>Options de paiement</Text>
           </View>
-          <View style={[styles.paymentRow, {justifyContent: 'center'}]}>
+          <View style={[styles.paymentRow, { justifyContent: 'center' }]}>
             {paymentOptions.map(opt => (
-              <TouchableOpacity
-                key={opt.id}
-                style={[styles.paymentOption, selectedPayment === opt.id && styles.paymentOptionActive]}
-                onPress={() => setSelectedPayment(opt.id)}
-              >
-                <Image source={opt.icon} style={styles.paymentImg} />
-              </TouchableOpacity>
+              <View key={opt.id} style={{ position: 'relative', marginHorizontal: 2 }}>
+                <TouchableOpacity
+                  style={[
+                    styles.paymentOption,
+                    selectedPayment === opt.id && styles.paymentOptionActive,
+                    !opt.enabled && styles.paymentOptionDisabled
+                  ]}
+                  onPress={() => handlePaymentIconClick(opt.id)}
+                  disabled={!opt.enabled}
+                >
+                  <Image source={opt.icon} style={[styles.paymentImg, !opt.enabled && styles.paymentImgDisabled]} />
+                </TouchableOpacity>
+                {!opt.enabled && (
+                  <View style={styles.disabledBadge}>
+                    <Text style={styles.disabledBadgeText}>Bientôt</Text>
+                  </View>
+                )}
+              </View>
             ))}
           </View>
         </View>
-
-        {/* Continue button */}
-        <TouchableOpacity style={styles.continueBtn} onPress={() => {
-          if (property) addReservation(property);
-          navigation.navigate('ReservationPaymentScreen');
-        }}>
-          <Text style={styles.continueText}>Continuer</Text>
-        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: '#F5E7CC',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  topHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B2A1B',
+  },
   cardContainer: {
     backgroundColor: '#fff',
     borderRadius: 24,
@@ -193,6 +313,14 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
+  displayCard: {
+    backgroundColor: 'transparent',
+    borderRadius: 18,
+    marginHorizontal: 28,
+    marginBottom: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
   feeLabel: {
     color: '#b6a98c',
     fontWeight: '600',
@@ -256,7 +384,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ede3cb',
     borderRadius: 16,
     padding: 0,
-    marginHorizontal: 2,
     borderWidth: 2,
     borderColor: 'transparent',
     alignItems: 'center',
@@ -269,11 +396,36 @@ const styles = StyleSheet.create({
     borderColor: '#9B8B75',
     backgroundColor: '#fef9f3',
   },
+  paymentOptionDisabled: {
+    backgroundColor: '#e5e1d6',
+    opacity: 0.5,
+  },
   paymentImg: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
     borderRadius: 14,
+  },
+  paymentImgDisabled: {
+    opacity: 0.4,
+  },
+  disabledBadge: {
+    position: 'absolute',
+    bottom: -8,
+    left: '50%',
+    transform: [{ translateX: -25 }],
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  disabledBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   continueBtn: {
     backgroundColor: '#3B2A1B',
@@ -284,6 +436,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 18,
     elevation: 2,
+  },
+  continueBtnDisabled: {
+    backgroundColor: '#B0A595',
+    opacity: 0.6,
   },
   continueText: {
     color: '#fff',

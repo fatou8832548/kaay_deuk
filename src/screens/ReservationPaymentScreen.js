@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Linking,
   Alert,
   Image,
   Clipboard,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -20,7 +20,7 @@ const KAAY_DEUK_OM_NUMBER = '77 000 00 00';
 
 function generateReference(userId) {
   const ts = Date.now().toString(36).toUpperCase();
-  return KD-RES-+ (userId || '0') + - + ts;
+  return KD - RES - + (userId || '0') + - + ts;
 }
 
 const STEPS = ['Reservation', 'Options', 'Paiement', 'Validation'];
@@ -42,18 +42,41 @@ export default function ReservationPaymentScreen({ route }) {
 
   const openWave = async () => {
     setSelectedMethod('wave');
-    const url = 'wavemobile://';
-    const canOpen = await Linking.canOpenURL(url).catch(() => false);
-    if (canOpen) {
-      Linking.openURL(url);
-    } else {
-      Alert.alert('Wave non installe', "Telechargez l'application Wave pour payer.", [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Telecharger Wave',
-          onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.wave.money'),
-        },
-      ]);
+
+    // Essayer plusieurs deep links Wave pour Android
+    const waveUrls = [
+      'wavemobile://',
+      'wave://',
+      'https://pay.wave.com/m/M_nMhHecBbBdnX/c/sn/'
+    ];
+
+    let opened = false;
+
+    for (const url of waveUrls) {
+      try {
+        const canOpen = await Linking.canOpenURL(url).catch(() => false);
+        if (canOpen) {
+          await Linking.openURL(url);
+          opened = true;
+          break;
+        }
+      } catch (error) {
+        console.log(`Échec avec ${url}:`, error.message);
+      }
+    }
+
+    if (!opened) {
+      Alert.alert(
+        'Wave non installé',
+        "Téléchargez l'application Wave pour effectuer le paiement.",
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Télécharger Wave',
+            onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.wave.money'),
+          },
+        ]
+      );
     }
   };
 
@@ -93,7 +116,8 @@ export default function ReservationPaymentScreen({ route }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <View style={styles.headerBg}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.headerTitle}>Reservation</Text>
@@ -145,28 +169,29 @@ export default function ReservationPaymentScreen({ route }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.payCard, selectedMethod === 'om' && styles.payCardSelected]}
-          onPress={openOrangeMoney}
+          style={[styles.payCard, selectedMethod === 'om' && styles.payCardSelected, styles.payCardDisabled]}
+          onPress={() => Alert.alert('Bientôt disponible', 'Orange Money sera disponible prochainement. Utilisez Wave pour le moment.')}
           activeOpacity={0.8}
+          disabled={true}
         >
           <View style={styles.payCardLeft}>
             <View style={[styles.payLogo, { backgroundColor: '#FF6200' }]}>
               <Text style={styles.payLogoText}>OM</Text>
             </View>
             <View>
-              <Text style={styles.payName}>Orange Money</Text>
-              <Text style={styles.payNumber}>Envoyer a : {KAAY_DEUK_OM_NUMBER}</Text>
+              <Text style={[styles.payName, styles.textDisabled]}>Orange Money</Text>
+              <Text style={[styles.payNumber, styles.textDisabled]}>Bientôt disponible</Text>
             </View>
           </View>
-          {selectedMethod === 'om'
-            ? <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-            : <Ionicons name="open-outline" size={22} color="#FF6200" />}
+          <View style={styles.disabledBadgeCard}>
+            <Text style={styles.disabledBadgeTextCard}>Bientôt</Text>
+          </View>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={20} color="#3B2A1B" />
           <Text style={styles.infoText}>
-            Effectuez le virement depuis votre application Wave ou Orange Money,
+            Effectuez le virement depuis votre application Wave,
             puis revenez ici et confirmez. Notre equipe validera votre reservation
             dans les 24h ouvrees.
           </Text>
@@ -181,13 +206,14 @@ export default function ReservationPaymentScreen({ route }) {
           <Text style={styles.confirmBtnText}>J'ai envoye le paiement</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 function ConfirmationScreen({ navigation, montant, reference }) {
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <ScrollView contentContainerStyle={styles.confirmScreen}>
         <View style={styles.confirmIconWrap}>
           <Ionicons name="time" size={72} color="#FF9500" />
@@ -215,7 +241,7 @@ function ConfirmationScreen({ navigation, montant, reference }) {
           <Text style={styles.homeBtnText}>Retour a l'accueil</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -292,6 +318,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
   },
   payCardSelected: { borderColor: '#4CAF50', backgroundColor: '#F0FFF4' },
+  payCardDisabled: {
+    backgroundColor: '#F5F5F5',
+    borderColor: '#D0D0D0',
+    opacity: 0.6,
+  },
   payCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   payLogo: {
     width: 46, height: 46, borderRadius: 10,
@@ -300,6 +331,21 @@ const styles = StyleSheet.create({
   payLogoText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
   payName: { fontSize: 16, fontWeight: 'bold', color: '#3B2A1B' },
   payNumber: { fontSize: 13, color: '#666', marginTop: 2 },
+  textDisabled: {
+    color: '#999',
+  },
+  disabledBadgeCard: {
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  disabledBadgeTextCard: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   infoBox: {
     flexDirection: 'row', backgroundColor: '#FFF8EC',
     borderRadius: 12, padding: 14, marginBottom: 22, marginTop: 4,

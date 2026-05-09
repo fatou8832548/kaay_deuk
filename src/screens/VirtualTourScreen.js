@@ -239,12 +239,12 @@ export default function VirtualTourScreen({ route }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Ionicons name="lock-closed" size={60} color="#FF9500" />
-            <Text style={styles.modalTitle}>Abonnement requis</Text>
+            <Text style={styles.modalTitle}>Paiement requis</Text>
             <Text style={styles.modalMessage}>
               {accessInfo && accessInfo.nombreVisitesEffectuees > 0
                 ? 'Vous avez deja effectue ' + accessInfo.nombreVisitesEffectuees + ' visite' + (accessInfo.nombreVisitesEffectuees > 1 ? 's' : '') + ' 3D.\n\n'
                 : ''}
-              {'Votre premiere visite 3D etait gratuite !\nAbonnez-vous pour continuer.'}
+              {'Votre premiere visite 3D etait gratuite !\nPayez 200 FCFA pour continuer.'}
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -260,12 +260,14 @@ export default function VirtualTourScreen({ route }) {
                 style={styles.modalButtonPrimary}
                 onPress={function () {
                   setShowAccessModal(false);
-                  navigation.navigate('Subscription', {
+                  var property = route && route.params && route.params.property;
+                  navigation.navigate('VisitPayment', {
+                    property: property,
                     nombreVisitesEffectuees: (accessInfo && accessInfo.nombreVisitesEffectuees) || 1,
                   });
                 }}
               >
-                <Text style={styles.modalButtonPrimaryText}>S'abonner</Text>
+                <Text style={styles.modalButtonPrimaryText}>Payer 200 FCFA</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -344,7 +346,7 @@ export default function VirtualTourScreen({ route }) {
                   <Ionicons name={room.icon} size={12}
                     color={active ? '#3B2A1B' : '#fff'} style={styles.roomIcon} />
                   <Text style={[styles.roomPillText,
-                    active ? styles.roomPillTextActive : styles.roomPillTextInactive]}>
+                  active ? styles.roomPillTextActive : styles.roomPillTextInactive]}>
                     {room.key}
                   </Text>
                 </TouchableOpacity>

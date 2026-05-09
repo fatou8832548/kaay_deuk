@@ -3,7 +3,7 @@
  */
 
 import { API_CONFIG } from '../config/apiConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE_URL = API_CONFIG.API_ENDPOINT;
 
@@ -12,7 +12,7 @@ const API_BASE_URL = API_CONFIG.API_ENDPOINT;
  */
 const getAuthToken = async () => {
   try {
-    const token = await AsyncStorage.getItem('authToken');
+    const token = await SecureStore.getItemAsync('authToken');
     return token;
   } catch (error) {
     console.error('Erreur récupération token:', error);

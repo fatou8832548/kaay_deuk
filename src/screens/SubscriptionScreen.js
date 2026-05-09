@@ -4,74 +4,33 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Image,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SubscriptionScreen({ route }) {
   const navigation = useNavigation();
-  const { nombreVisitesEffectuees = 1 } = route.params || {};
+  const { nombreVisitesEffectuees = 1, property } = route.params || {};
 
-  const plans = [
-    {
-      id: 1,
-      name: 'Plan Mensuel',
-      price: '5 000',
-      duration: '/mois',
-      features: [
-        'Visites 3D illimitées',
-        'Accès prioritaire aux nouveaux logements',
-        'Support client 24/7',
-        'Sans engagement',
-      ],
-      popular: false,
-    },
-    {
-      id: 2,
-      name: 'Plan Trimestriel',
-      price: '12 000',
-      duration: '/3 mois',
-      features: [
-        'Visites 3D illimitées',
-        'Accès prioritaire aux nouveaux logements',
-        'Support client 24/7',
-        'Économisez 20%',
-        'Notifications en temps réel',
-      ],
-      popular: true,
-    },
-    {
-      id: 3,
-      name: 'Plan Annuel',
-      price: '40 000',
-      duration: '/an',
-      features: [
-        'Visites 3D illimitées',
-        'Accès prioritaire aux nouveaux logements',
-        'Support client VIP',
-        'Économisez 33%',
-        'Notifications en temps réel',
-        'Conseils personnalisés',
-      ],
-      popular: false,
-    },
-  ];
-
-  const handleSubscribe = (plan) => {
-    navigation.navigate('SubscriptionPayment', { plan });
+  const handlePayVisit = () => {
+    navigation.navigate('VisitPayment', {
+      nombreVisitesEffectuees,
+      property
+    });
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#3B2A1B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Abonnement</Text>
+        <Text style={styles.headerTitle}>Paiement Visite 3D</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -83,67 +42,86 @@ export default function SubscriptionScreen({ route }) {
             Vous avez effectué <Text style={styles.bold}>{nombreVisitesEffectuees}</Text> visite
             {nombreVisitesEffectuees > 1 ? 's' : ''} 3D.
             {'\n'}
-            Abonnez-vous pour continuer à explorer nos logements en 3D !
+            Payez 200 FCFA pour continuer à explorer nos logements en 3D !
           </Text>
         </View>
 
-        {/* Plans */}
-        <View style={styles.plansContainer}>
-          {plans.map((plan) => (
-            <View
-              key={plan.id}
-              style={[styles.planCard, plan.popular && styles.planCardPopular]}
-            >
-              {plan.popular && (
-                <View style={styles.popularBadge}>
-                  <Text style={styles.popularText}>POPULAIRE</Text>
-                </View>
-              )}
+        {/* Pricing Card */}
+        <View style={styles.pricingCard}>
+          <View style={styles.pricingHeader}>
+            <Ionicons name="cube" size={48} color="#FF9500" />
+            <Text style={styles.pricingTitle}>Visite 3D à la demande</Text>
+            <Text style={styles.pricingSubtitle}>Simple et flexible</Text>
+          </View>
 
-              <Text style={styles.planName}>{plan.name}</Text>
+          <View style={styles.priceBox}>
+            <Text style={styles.currency}>FCFA</Text>
+            <Text style={styles.price}>200</Text>
+            <Text style={styles.duration}>/visite</Text>
+          </View>
 
-              <View style={styles.priceContainer}>
-                <Text style={styles.currency}>FCFA</Text>
-                <Text style={styles.price}>{plan.price}</Text>
-                <Text style={styles.duration}>{plan.duration}</Text>
-              </View>
-
-              <View style={styles.featuresContainer}>
-                {plan.features.map((feature, index) => (
-                  <View key={index} style={styles.featureRow}>
-                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={[styles.subscribeButton, plan.popular && styles.subscribeButtonPopular]}
-                onPress={() => handleSubscribe(plan)}
-              >
-                <Text
-                  style={[
-                    styles.subscribeButtonText,
-                    plan.popular && styles.subscribeButtonTextPopular,
-                  ]}
-                >
-                  S'abonner
-                </Text>
-              </TouchableOpacity>
+          <View style={styles.featuresContainer}>
+            <View style={styles.featureRow}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>Première visite gratuite</Text>
             </View>
-          ))}
+            <View style={styles.featureRow}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>200 FCFA par visite ensuite</Text>
+            </View>
+            <View style={styles.featureRow}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>Payez uniquement ce que vous utilisez</Text>
+            </View>
+            <View style={styles.featureRow}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>Paiement sécurisé via Wave</Text>
+            </View>
+            <View style={styles.featureRow}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              <Text style={styles.featureText}>Accès immédiat après validation</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.payButton}
+            onPress={handlePayVisit}
+          >
+            <Ionicons name="card-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+            <Text style={styles.payButtonText}>Payer 200 FCFA</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Benefits */}
         <View style={styles.benefitsContainer}>
-          <Text style={styles.benefitsTitle}>Pourquoi s'abonner ?</Text>
+          <Text style={styles.benefitsTitle}>Pourquoi payer par visite ?</Text>
+
+          <View style={styles.benefitRow}>
+            <Ionicons name="wallet-outline" size={32} color="#3B2A1B" />
+            <View style={styles.benefitContent}>
+              <Text style={styles.benefitTitle}>Économique</Text>
+              <Text style={styles.benefitDesc}>
+                Ne payez que pour les visites que vous faites
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.benefitRow}>
+            <Ionicons name="flash-outline" size={32} color="#3B2A1B" />
+            <View style={styles.benefitContent}>
+              <Text style={styles.benefitTitle}>Sans engagement</Text>
+              <Text style={styles.benefitDesc}>
+                Aucun abonnement, aucune période d'engagement
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.benefitRow}>
             <Ionicons name="cube-outline" size={32} color="#3B2A1B" />
             <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>Visites 3D illimitées</Text>
+              <Text style={styles.benefitTitle}>Visites 3D immersives</Text>
               <Text style={styles.benefitDesc}>
-                Explorez tous nos logements en réalité virtuelle
+                Explorez les logements comme si vous y étiez
               </Text>
             </View>
           </View>
@@ -157,19 +135,44 @@ export default function SubscriptionScreen({ route }) {
               </Text>
             </View>
           </View>
+        </View>
 
-          <View style={styles.benefitRow}>
-            <Ionicons name="star-outline" size={32} color="#3B2A1B" />
-            <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>Accès prioritaire</Text>
-              <Text style={styles.benefitDesc}>
-                Soyez le premier informé des nouveaux logements
-              </Text>
+        {/* How it works */}
+        <View style={styles.howItWorksContainer}>
+          <Text style={styles.howItWorksTitle}>Comment ça marche ?</Text>
+
+          <View style={styles.stepContainer}>
+            <View style={styles.stepBadge}>
+              <Text style={styles.stepNumber}>1</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>Première visite gratuite</Text>
+              <Text style={styles.stepDesc}>Découvrez une visite 3D gratuitement</Text>
+            </View>
+          </View>
+
+          <View style={styles.stepContainer}>
+            <View style={styles.stepBadge}>
+              <Text style={styles.stepNumber}>2</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>Payez 200 FCFA par visite</Text>
+              <Text style={styles.stepDesc}>Pour chaque visite suivante via Wave</Text>
+            </View>
+          </View>
+
+          <View style={styles.stepContainer}>
+            <View style={styles.stepBadge}>
+              <Text style={styles.stepNumber}>3</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>Accès instantané</Text>
+              <Text style={styles.stepDesc}>Explorez le logement en 3D immédiatement</Text>
             </View>
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -183,13 +186,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingTop: 20,
+    paddingBottom: 15,
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   backButton: {
-    padding: 5,
+    padding: 8,
   },
   headerTitle: {
     fontSize: 20,
@@ -216,18 +220,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FF9500',
   },
-  plansContainer: {
-    paddingHorizontal: 20,
-  },
-  planCard: {
+  pricingCard: {
     backgroundColor: '#FFF',
-    borderRadius: 15,
-    padding: 20,
+    marginHorizontal: 20,
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-  },
-  planCardPopular: {
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 3,
     borderColor: '#FF9500',
     shadowColor: '#FF9500',
     shadowOffset: { width: 0, height: 4 },
@@ -235,48 +234,47 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  popularBadge: {
-    position: 'absolute',
-    top: -10,
-    right: 20,
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  popularText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  planName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#3B2A1B',
-    marginBottom: 10,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+  pricingHeader: {
+    alignItems: 'center',
     marginBottom: 20,
   },
-  currency: {
+  pricingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3B2A1B',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  pricingSubtitle: {
     fontSize: 14,
     color: '#666',
-    marginRight: 5,
   },
-  price: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#3B2A1B',
+  priceBox: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginBottom: 24,
+    paddingVertical: 16,
+    backgroundColor: '#FFF8EC',
+    borderRadius: 12,
   },
-  duration: {
+  currency: {
     fontSize: 16,
     color: '#666',
-    marginLeft: 5,
+    marginRight: 6,
+  },
+  price: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FF9500',
+  },
+  duration: {
+    fontSize: 18,
+    color: '#666',
+    marginLeft: 6,
   },
   featuresContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   featureRow: {
     flexDirection: 'row',
@@ -288,29 +286,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#3B2A1B',
   },
-  subscribeButton: {
-    backgroundColor: '#3B2A1B',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  subscribeButtonPopular: {
+  payButton: {
     backgroundColor: '#FF9500',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
-  subscribeButtonText: {
+  payButtonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-  },
-  subscribeButtonTextPopular: {
-    color: '#FFF',
   },
   benefitsContainer: {
     backgroundColor: '#FFF',
     margin: 20,
     padding: 20,
     borderRadius: 15,
-    marginBottom: 40,
   },
   benefitsTitle: {
     fontSize: 20,
@@ -334,6 +327,53 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   benefitDesc: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  howItWorksContainer: {
+    backgroundColor: '#FFF',
+    marginHorizontal: 20,
+    marginBottom: 40,
+    padding: 20,
+    borderRadius: 15,
+  },
+  howItWorksTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#3B2A1B',
+    marginBottom: 20,
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  stepBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF9500',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  stepNumber: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  stepContent: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3B2A1B',
+    marginBottom: 4,
+  },
+  stepDesc: {
     fontSize: 14,
     color: '#666',
     lineHeight: 20,

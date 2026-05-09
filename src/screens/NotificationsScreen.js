@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Animated, TouchableOpacity } from 'react-native';
-import { Bell, Home, Calendar, Star, X } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, Animated, TouchableOpacity, StatusBar } from 'react-native';
+import { Bell, Home, Calendar, Star, X, ArrowLeft } from 'lucide-react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
 
 const initialNotifications = [
   {
@@ -29,6 +30,7 @@ const initialNotifications = [
 ];
 
 export default function NotificationsScreen() {
+  const navigation = useNavigation();
   const [notifications, setNotifications] = useState(initialNotifications);
 
   const handleDelete = (id) => {
@@ -48,10 +50,19 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <Bell size={20} color="#7c715a" style={{ marginRight: 8 }} />
-        <Text style={styles.header}>Notifications</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f9f7f3" />
+
+      {/* Header avec bouton retour */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <ArrowLeft size={24} color="#3B2A1B" />
+        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <Bell size={20} color="#7c715a" style={{ marginRight: 8 }} />
+          <Text style={styles.header}>Notifications</Text>
+        </View>
+        <View style={{ width: 40 }} />
       </View>
       <FlatList
         data={notifications}
@@ -79,7 +90,7 @@ export default function NotificationsScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -87,13 +98,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9f7f3',
-    padding: 16,
+    paddingTop: 12,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: '#f9f7f3',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 18,
   },
   header: {
     color: '#7c715a',
@@ -106,6 +136,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 14,
     marginBottom: 14,
+    marginHorizontal: 16,
     alignItems: 'flex-start',
     shadowColor: '#000',
     shadowOpacity: 0.04,

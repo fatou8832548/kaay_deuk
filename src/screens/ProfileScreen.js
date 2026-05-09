@@ -19,9 +19,9 @@ export default function ProfileScreen() {
   const { user: contextUser } = useUser();
 
   const [user, setUser] = useState({
-    name: contextUser?.fullName || 'Utilisateur',
+    name: contextUser?.nom || contextUser?.fullName || 'Utilisateur',
     email: contextUser?.email || '',
-    phone: contextUser?.phone || '',
+    phone: contextUser?.telephone || contextUser?.phone || '',
     avatar: null,
     language: 'Français',
     languageValue: 'fr',
@@ -29,6 +29,18 @@ export default function ProfileScreen() {
   const [langModal, setLangModal] = useState(false);
   const [favModal, setFavModal] = useState(false);
   const [resModal, setResModal] = useState(false);
+
+  // Mettre à jour les données utilisateur quand le contexte change
+  React.useEffect(() => {
+    if (contextUser) {
+      setUser(prev => ({
+        ...prev,
+        name: contextUser.nom || contextUser.fullName || 'Utilisateur',
+        email: contextUser.email || '',
+        phone: contextUser.telephone || contextUser.phone || '',
+      }));
+    }
+  }, [contextUser]);
 
   return (
     <View style={styles.container}>

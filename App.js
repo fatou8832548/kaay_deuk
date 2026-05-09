@@ -31,7 +31,7 @@ function AppContent() {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         const currentUser = await getCurrentUser();
-        
+
         if (isComponentMounted) {
           if (currentUser) {
             setUser(currentUser);
@@ -66,8 +66,11 @@ function AppContent() {
       setLoading(true);
       const result = await loginService(credentials.email, credentials.password);
 
-      if (result.utilisateur) {
-        setUser(result.utilisateur);
+      // Le backend retourne { data: { utilisateur, access_token }, success, timestamp }
+      const userData = result.data?.utilisateur || result.utilisateur;
+
+      if (userData) {
+        setUser(userData);
         setRoute('home');
       } else {
         Alert.alert('Erreur', 'Connexion réussie mais données utilisateur manquantes');
@@ -93,8 +96,11 @@ function AppContent() {
 
       const result = await registerService(userData);
 
-      if (result.utilisateur) {
-        setUser(result.utilisateur);
+      // Le backend retourne { data: { utilisateur, access_token }, success, timestamp }
+      const userInfo = result.data?.utilisateur || result.utilisateur;
+
+      if (userInfo) {
+        setUser(userInfo);
         Alert.alert(
           'Inscription réussie',
           'Votre compte a été créé avec succès.',

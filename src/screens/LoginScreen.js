@@ -9,10 +9,47 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen({ onLogin, onGoToRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // Validation de l'email
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validation du mot de passe
+  const validatePassword = (password) => {
+    return password.length >= 6;
+  };
+
+  // Validation lors de la soumission
+  const handleSubmit = () => {
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = 'L\'adresse e-mail est requise';
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Format d\'e-mail invalide';
+    }
+
+    if (!password.trim()) {
+      newErrors.password = 'Le mot de passe est requis';
+    } else if (!validatePassword(password)) {
+      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      onLogin({ email, password });
+    }
+  };
 
   const canSubmit = email.trim().length > 0 && password.trim().length > 0;
 
@@ -32,32 +69,56 @@ export default function LoginScreen({ onLogin, onGoToRegister }) {
 
         <View style={styles.inputGroup}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.email && styles.inputError]}
             placeholder="Adresse e-mail"
             placeholderTextColor="#8A7F74"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) {
+                setErrors({ ...errors, email: null });
+              }
+            }}
           />
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Mot de passe"
-            placeholderTextColor="#8A7F74"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.passwordInput, errors.password && styles.inputError]}
+              placeholder="Mot de passe"
+              placeholderTextColor="#8A7F74"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) {
+                  setErrors({ ...errors, password: null });
+                }
+              }}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color="#8A7F74"
+              />
+            </TouchableOpacity>
+          </View>
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
 
         <TouchableOpacity style={styles.forgotLink} onPress={() => null}>
           <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.primaryButton, !canSubmit && styles.disabledButton]} disabled={!canSubmit} onPress={() => onLogin({ email, password })}>
+        <TouchableOpacity style={[styles.primaryButton, !canSubmit && styles.disabledButton]} disabled={!canSubmit} onPress={handleSubmit}>
           <Text style={styles.primaryButtonText}>Se connecter</Text>
         </TouchableOpacity>
 
@@ -119,6 +180,38 @@ const styles = StyleSheet.create({
     color: '#3B2A1B',
     borderWidth: 1,
     borderColor: '#E6D9C7',
+  },
+  passwordContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    backgroundColor: '#F6F1E7',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingRight: 50,
+    fontSize: 15,
+    color: '#3B2A1B',
+    borderWidth: 1,
+    borderColor: '#E6D9C7',
+    flex: 1,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    padding: 4,
+  },
+  inputError: {
+    borderColor: '#D32F2F',
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   logo: {
     width: 110,

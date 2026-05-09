@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, StatusBar } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Linking } from 'react-native';
 import { API_CONFIG } from '../config/apiConfig';
 
@@ -13,7 +12,7 @@ export default function PropertyDetailScreen({ route, navigation }) {
 
   // Récupérer les données de l'API (original) ou les données transformées
   const data = property.original || property;
-  
+
   // Extraire les informations
   const titre = data.titre || property.title || 'Maison Familiale';
   const description = data.description || property.description || 'Propriété magnifique';
@@ -26,12 +25,12 @@ export default function PropertyDetailScreen({ route, navigation }) {
   const nombrePieces = data.nombrePieces || property.nombrePieces || 'N/A';
   const disponible = data.disponible !== false;
   const caution = data.caution || 'N/A';
-  
+
   // Récupérer l'image principale
-  const mainImage = data.images && data.images[0]?.url 
+  const mainImage = data.images && data.images[0]?.url
     ? `${API_CONFIG.BASE_URL}${data.images[0].url}`
     : property.image;
-  
+
   // Récupérer les équipements de la première image
   const equipements = data && data.equipements ? data.equipements : {};
 
@@ -51,7 +50,8 @@ export default function PropertyDetailScreen({ route, navigation }) {
   ].filter(item => equipements[item.key]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <View style={{ flex: 1 }}>
         <Image source={{ uri: mainImage }} style={[styles.image, { height: height * 0.42 }]} />
         <View style={styles.detailsOverlay}>
@@ -97,14 +97,14 @@ export default function PropertyDetailScreen({ route, navigation }) {
 
               {/* Boutons Visite 3D et Réserver */}
               <View style={styles.actionRow}>
-                <TouchableOpacity 
-                  style={styles.visitBtn} 
+                <TouchableOpacity
+                  style={styles.visitBtn}
                   onPress={() => navigation.navigate('VirtualTourScreen', { property })}
                 >
                   <Text style={styles.visitBtnText}>Visite 3D</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.reserveBtn} 
+                <TouchableOpacity
+                  style={styles.reserveBtn}
                   onPress={() => navigation.navigate('ReservationScreen', { property })}
                 >
                   <Text style={styles.reserveBtnText}>Réserver</Text>
@@ -149,7 +149,7 @@ export default function PropertyDetailScreen({ route, navigation }) {
           </ScrollView>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

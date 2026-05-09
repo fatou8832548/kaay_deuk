@@ -3,7 +3,7 @@
  */
 
 import { API_CONFIG } from '../config/apiConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE_URL = API_CONFIG.API_ENDPOINT;
 
@@ -31,22 +31,35 @@ export const register = async (userData) => {
 
     const data = await response.json();
 
+    // Le backend peut retourner {data: {access_token, utilisateur}} ou directement {access_token, utilisateur}
+    const actualData = data.data || data;
+    const token = actualData.access_token;
+    const utilisateur = actualData.utilisateur;
+
     // Stocker le token JWT avec gestion d'erreur
-    if (data.access_token) {
+    if (token) {
       try {
-        await AsyncStorage.setItem('authToken', data.access_token);
+        await SecureStore.setItemAsync('authToken', token);
+        console.log('Token stocké avec succès (register)');
       } catch (storageError) {
-        console.warn('Erreur lors du stockage du token:', storageError);
+        console.error('Erreur lors du stockage du token:', storageError);
+        throw new Error('Impossible de stocker le token d\'authentification');
       }
+    } else {
+      throw new Error('Token d\'authentification manquant dans la réponse');
     }
 
     // Stocker les informations utilisateur
-    if (data.utilisateur) {
+    if (utilisateur) {
       try {
-        await AsyncStorage.setItem('user', JSON.stringify(data.utilisateur));
+        await SecureStore.setItemAsync('user', JSON.stringify(utilisateur));
+        console.log('Utilisateur stocké avec succès (register):', utilisateur.email);
       } catch (storageError) {
-        console.warn('Erreur lors du stockage de l\'utilisateur:', storageError);
+        console.error('Erreur lors du stockage de l\'utilisateur:', storageError);
+        throw new Error('Impossible de stocker les informations utilisateur');
       }
+    } else {
+      throw new Error('Informations utilisateur manquantes dans la réponse');
     }
 
     return data;
@@ -81,22 +94,35 @@ export const login = async (email, motDePasse) => {
 
     const data = await response.json();
 
+    // Le backend peut retourner {data: {access_token, utilisateur}} ou directement {access_token, utilisateur}
+    const actualData = data.data || data;
+    const token = actualData.access_token;
+    const utilisateur = actualData.utilisateur;
+
     // Stocker le token JWT avec gestion d'erreur
-    if (data.access_token) {
+    if (token) {
       try {
-        await AsyncStorage.setItem('authToken', data.access_token);
+        await SecureStore.setItemAsync('authToken', token);
+        console.log('Token stocké avec succès (login)');
       } catch (storageError) {
-        console.warn('Erreur lors du stockage du token:', storageError);
+        console.error('Erreur lors du stockage du token:', storageError);
+        throw new Error('Impossible de stocker le token d\'authentification');
       }
+    } else {
+      throw new Error('Token d\'authentification manquant dans la réponse');
     }
 
     // Stocker les informations utilisateur
-    if (data.utilisateur) {
+    if (utilisateur) {
       try {
-        await AsyncStorage.setItem('user', JSON.stringify(data.utilisateur));
+        await SecureStore.setItemAsync('user', JSON.stringify(utilisateur));
+        console.log('Utilisateur stocké avec succès (login):', utilisateur.email);
       } catch (storageError) {
-        console.warn('Erreur lors du stockage de l\'utilisateur:', storageError);
+        console.error('Erreur lors du stockage de l\'utilisateur:', storageError);
+        throw new Error('Impossible de stocker les informations utilisateur');
       }
+    } else {
+      throw new Error('Informations utilisateur manquantes dans la réponse');
     }
 
     return data;
@@ -111,11 +137,11 @@ export const login = async (email, motDePasse) => {
  */
 export const logout = async () => {
   try {
-    await AsyncStorage.removeItem('authToken');
-    await AsyncStorage.removeItem('user');
+    await SecureStore.deleteItemAsync('authToken');
+    await SecureStore.deleteItemAsync('user');
   } catch (error) {
     console.warn('Erreur logout:', error);
-    // Ne pas lever l'erreur, la déconnexion devrait réussir même si AsyncStorage échoue
+    // Ne pas lever l'erreur, la déconnexion devrait réussir même si SecureStore échoue
   }
 };
 
@@ -124,26 +150,9 @@ export const logout = async () => {
  */
 export const getCurrentUser = async () => {
   try {
-    // Ajouter un délai pour s'assurer qu'AsyncStorage est prêt
-    if (!AsyncStorage._primed) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-    
-    const userStr = await AsyncStorage.getItem('user');
+    const userStr = await SecureStore.getItemAsync('user');
     return userStr ? JSON.parse(userStr) : null;
   } catch (error) {
-    if (error.message && error.message.includes('Native module is null')) {
-      console.warn('AsyncStorage pas encore initialisé, tentative de récupération retardée');
-      // Attendre un peu et réessayer
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      try {
-        const userStr = await AsyncStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
-      } catch (retryError) {
-        console.error('Erreur lors de la tentative de récupération de l\'utilisateur:', retryError);
-        return null;
-      }
-    }
     console.error('Erreur getCurrentUser:', error);
     return null;
   }
@@ -154,7 +163,7 @@ export const getCurrentUser = async () => {
  */
 export const getAuthToken = async () => {
   try {
-    return await AsyncStorage.getItem('authToken');
+    return await SecureStore.getItemAsync('authToken');
   } catch (error) {
     console.warn('Erreur getAuthToken:', error);
     return null;

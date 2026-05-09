@@ -51,7 +51,6 @@ Le serveur devrait démarrer sur `http://localhost:3000`
 
 Fichier: `kaay_deuk/src/config/apiConfig.js`
 \`\`\`javascript
-const API_BASE_URL = 'https://gurgle-acronym-rarity.ngrok-free.dev';
 // OU si en local: 'http://localhost:3000'
 \`\`\`
 

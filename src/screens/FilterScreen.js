@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
+  StatusBar,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { X, Home, DollarSign, Wrench } from 'lucide-react-native';
@@ -43,9 +44,10 @@ export default function FilterScreen({ visible, onClose, onApply }) {
 
   return (
     <View style={styles.overlay}>
-      <TouchableOpacity 
-        style={styles.backdropTouchable} 
-        activeOpacity={1} 
+      <StatusBar barStyle="dark-content" backgroundColor="rgba(0,0,0,0.5)" />
+      <TouchableOpacity
+        style={styles.backdropTouchable}
+        activeOpacity={1}
         onPress={onClose}
       />
       <View style={styles.bottomSheet}>
@@ -57,101 +59,101 @@ export default function FilterScreen({ visible, onClose, onApply }) {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Type de propriété */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Home color="#3B2A1B" size={20} />
-            <Text style={styles.sectionTitle}>Type de propriété</Text>
-          </View>
+          {/* Type de propriété */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Home color="#3B2A1B" size={20} />
+              <Text style={styles.sectionTitle}>Type de propriété</Text>
+            </View>
 
-          <View style={styles.propertyTypes}>
-            {['Tout', 'Studio', 'Appartement'].map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.propertyButton,
-                  propertyType === type && styles.propertyButtonActive,
-                ]}
-                onPress={() => setPropertyType(type)}
-              >
-                <Text
+            <View style={styles.propertyTypes}>
+              {['Tout', 'Studio', 'Appartement'].map((type) => (
+                <TouchableOpacity
+                  key={type}
                   style={[
-                    styles.propertyButtonText,
-                    propertyType === type && styles.propertyButtonTextActive,
+                    styles.propertyButton,
+                    propertyType === type && styles.propertyButtonActive,
                   ]}
+                  onPress={() => setPropertyType(type)}
                 >
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Budget */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <DollarSign color="#3B2A1B" size={20} />
-            <Text style={styles.sectionTitle}>Budget (FCFA)</Text>
-          </View>
-
-          <View style={styles.budgetContainer}>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={500000}
-              step={10000}
-              value={minBudget}
-              onValueChange={setMinBudget}
-              minimumTrackTintColor="#3B2A1B"
-              maximumTrackTintColor="#D9CBB7"
-              thumbTintColor="#3B2A1B"
-            />
-            <View style={styles.budgetRange}>
-              <Text style={styles.budgetText}>{minBudget.toLocaleString()}</Text>
-              <Text style={styles.budgetText}>{maxBudget.toLocaleString()}</Text>
+                  <Text
+                    style={[
+                      styles.propertyButtonText,
+                      propertyType === type && styles.propertyButtonTextActive,
+                    ]}
+                  >
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-        </View>
 
-        {/* Équipements */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Wrench color="#3B2A1B" size={20} />
-            <Text style={styles.sectionTitle}>Équipements</Text>
-          </View>
+          {/* Budget */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <DollarSign color="#3B2A1B" size={20} />
+              <Text style={styles.sectionTitle}>Budget (FCFA)</Text>
+            </View>
 
-          <View style={styles.facilitiesContainer}>
-            <View style={styles.facilityItem}>
-              <Text style={styles.facilityText}>WiFi Haute Vitesse</Text>
-              <Switch
-                value={facilities.wifi}
-                onValueChange={() => toggleFacility('wifi')}
-                trackColor={{ false: '#D9CBB7', true: '#3B2A1B' }}
-                thumbColor={facilities.wifi ? '#fff' : '#8A7F74'}
+            <View style={styles.budgetContainer}>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={500000}
+                step={10000}
+                value={minBudget}
+                onValueChange={setMinBudget}
+                minimumTrackTintColor="#3B2A1B"
+                maximumTrackTintColor="#D9CBB7"
+                thumbTintColor="#3B2A1B"
               />
-            </View>
-
-            <View style={styles.facilityItem}>
-              <Text style={styles.facilityText}>Meublé</Text>
-              <Switch
-                value={facilities.furnished}
-                onValueChange={() => toggleFacility('furnished')}
-                trackColor={{ false: '#D9CBB7', true: '#3B2A1B' }}
-                thumbColor={facilities.furnished ? '#fff' : '#8A7F74'}
-              />
-            </View>
-
-            <View style={styles.facilityItem}>
-              <Text style={styles.facilityText}>Escaliers internes</Text>
-              <Switch
-                value={facilities.stairs}
-                onValueChange={() => toggleFacility('stairs')}
-                trackColor={{ false: '#D9CBB7', true: '#3B2A1B' }}
-                thumbColor={facilities.stairs ? '#fff' : '#8A7F74'}
-              />
+              <View style={styles.budgetRange}>
+                <Text style={styles.budgetText}>{minBudget.toLocaleString()}</Text>
+                <Text style={styles.budgetText}>{maxBudget.toLocaleString()}</Text>
+              </View>
             </View>
           </View>
-        </View>
+
+          {/* Équipements */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Wrench color="#3B2A1B" size={20} />
+              <Text style={styles.sectionTitle}>Équipements</Text>
+            </View>
+
+            <View style={styles.facilitiesContainer}>
+              <View style={styles.facilityItem}>
+                <Text style={styles.facilityText}>WiFi Haute Vitesse</Text>
+                <Switch
+                  value={facilities.wifi}
+                  onValueChange={() => toggleFacility('wifi')}
+                  trackColor={{ false: '#D9CBB7', true: '#3B2A1B' }}
+                  thumbColor={facilities.wifi ? '#fff' : '#8A7F74'}
+                />
+              </View>
+
+              <View style={styles.facilityItem}>
+                <Text style={styles.facilityText}>Meublé</Text>
+                <Switch
+                  value={facilities.furnished}
+                  onValueChange={() => toggleFacility('furnished')}
+                  trackColor={{ false: '#D9CBB7', true: '#3B2A1B' }}
+                  thumbColor={facilities.furnished ? '#fff' : '#8A7F74'}
+                />
+              </View>
+
+              <View style={styles.facilityItem}>
+                <Text style={styles.facilityText}>Escaliers internes</Text>
+                <Switch
+                  value={facilities.stairs}
+                  onValueChange={() => toggleFacility('stairs')}
+                  trackColor={{ false: '#D9CBB7', true: '#3B2A1B' }}
+                  thumbColor={facilities.stairs ? '#fff' : '#8A7F74'}
+                />
+              </View>
+            </View>
+          </View>
         </ScrollView>
 
         {/* Bouton Appliquer */}

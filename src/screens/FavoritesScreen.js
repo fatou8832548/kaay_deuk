@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { X, MapPin } from 'lucide-react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +12,7 @@ export default function FavoritesScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <Text style={styles.pageTitle}>Mes favoris</Text>
       <Text style={styles.subTitle}>{favorites.length} mis en favoris</Text>
       <FlatList
@@ -41,7 +42,7 @@ export default function FavoritesScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.reserveBtn}
-                  // disabled={item.reserved} // Optionnel : à activer si la réservation est dynamique
+                // disabled={item.reserved} // Optionnel : à activer si la réservation est dynamique
                 >
                   <Text style={styles.reserveBtnText}>Réserver</Text>
                 </TouchableOpacity>

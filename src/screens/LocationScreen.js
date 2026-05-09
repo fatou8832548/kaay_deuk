@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { MapPin } from 'lucide-react-native';
 
@@ -28,12 +28,13 @@ export default function LocationScreen({ onApply }) {
       longitude: selectedRegion.longitude,
       name: selectedRegion.name || 'Zone personnalisée',
     });
-    
+
     if (onApply) onApply(selectedRegion);
   };
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <MapView
         style={styles.map}
         initialRegion={selectedRegion}
