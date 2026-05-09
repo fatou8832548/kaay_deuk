@@ -14,6 +14,8 @@ import ReservationPaymentScreen from '../screens/ReservationPaymentScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import PropertyDetailScreen from '../screens/PropertyDetailScreen';
 import VirtualTourScreen from '../screens/VirtualTourScreen';
+import SubscriptionScreen from '../screens/SubscriptionScreen';
+import SubscriptionPaymentScreen from '../screens/SubscriptionPaymentScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -60,9 +62,12 @@ export default function MainTabNavigator({ onLogout }) {
         <Stack.Screen name="Paramètres" component={SettingsScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="ReservationPaymentScreen" component={ReservationPaymentScreen} />
+        <Stack.Screen name="ReservationPayment" component={ReservationPaymentScreen} />
         <Stack.Screen name="PropertyDetailScreen" component={PropertyDetailScreen} />
         <Stack.Screen name="ReservationScreen" component={ReservationScreen} />
         <Stack.Screen name="VirtualTourScreen" component={VirtualTourScreen} />
+        <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+        <Stack.Screen name="SubscriptionPayment" component={SubscriptionPaymentScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
