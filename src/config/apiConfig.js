@@ -3,7 +3,7 @@
  * Tous les services API utilisent cette URL de base
  */
 
-const API_BASE_URL = 'https://gurgle-acronym-rarity.ngrok-free.dev';
+const API_BASE_URL = 'https://anemic-tranquil-outburst.ngrok-free.dev';
 const API_ENDPOINT = `${API_BASE_URL}/api`;
 
 export const API_CONFIG = {
