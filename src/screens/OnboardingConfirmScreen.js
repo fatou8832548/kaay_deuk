@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardingConfirmScreen({ onStart }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.imageContainer}>
         {/* Remplacer par l'image réelle plus tard */}
         <Image source={require('../../assets/key_house_hand.png')} style={styles.image} />
@@ -21,7 +22,7 @@ export default function OnboardingConfirmScreen({ onStart }) {
       <TouchableOpacity style={styles.button} onPress={onStart}>
         <Text style={styles.buttonText}>Commencer l'aventure  🗝️</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

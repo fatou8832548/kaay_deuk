@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Image, StyleSheet, View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SplashScreen({ onFinish }) {
   useEffect(() => {
@@ -10,10 +11,10 @@ export default function SplashScreen({ onFinish }) {
   }, [onFinish]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Kaay Dëk</Text>
-    </View>
+    </SafeAreaView>
   );
 }
 

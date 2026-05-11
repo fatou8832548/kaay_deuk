@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, FlatList, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, MoreVertical, Heart, Calendar, ChevronRight, Mail, Phone, Lock, Globe } from 'lucide-react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useReservations } from '../context/ReservationContext';
@@ -43,7 +44,7 @@ export default function ProfileScreen() {
   }, [contextUser]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Profile Header */}
       <View style={styles.header}>
         <View style={styles.avatarWrapper}>
@@ -219,7 +220,7 @@ export default function ProfileScreen() {
           />
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

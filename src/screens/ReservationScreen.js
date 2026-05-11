@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Linking, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useReservations } from '../context/ReservationContext';
@@ -45,8 +46,8 @@ export default function ReservationScreen({ route, navigation }) {
   };
 
   const housingFee = extractPrice(property);
-  const reservationFee = housingFee > 0 ? Math.round(housingFee * 0.1) : 5000; // 10% du prix ou 5000 XOF par défaut
-  const total = housingFee + reservationFee;
+  const cautionFee = housingFee > 0 ? housingFee * 2 : 0;
+  const total = housingFee + cautionFee;
 
   const canContinue = total > 0;
 
@@ -67,7 +68,11 @@ export default function ReservationScreen({ route, navigation }) {
 
     if (paymentId === 'wave') {
       // Essayer plusieurs deep links Wave (wavemobile:// puis wave://)
-      const waveSchemes = ['wavemobile://', 'wave://'];
+      const waveSchemes = [
+        `https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${total}`,
+        'wavemobile://',
+        'wave://',
+      ];
       let opened = false;
 
       for (const scheme of waveSchemes) {
@@ -116,7 +121,7 @@ export default function ReservationScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header avec bouton retour */}
       <View style={styles.topHeader}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -159,10 +164,10 @@ export default function ReservationScreen({ route, navigation }) {
             </View>
           </View>
           <View style={{ marginHorizontal: 0, marginBottom: 8 }}>
-            <Text style={styles.feeLabel}>Frais de réservation (10%)</Text>
+            <Text style={styles.feeLabel}>Frais de caution (x2)</Text>
             <View style={styles.displayCard}>
               <View style={styles.feeBox}>
-                <Text style={styles.feeValue}>{reservationFee.toLocaleString()} XOF</Text>
+                <Text style={styles.feeValue}>{cautionFee.toLocaleString()} XOF</Text>
               </View>
             </View>
           </View>
@@ -205,7 +210,7 @@ export default function ReservationScreen({ route, navigation }) {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

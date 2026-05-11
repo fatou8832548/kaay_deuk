@@ -1,4 +1,5 @@
 ﻿import React, { useMemo, useState, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
 import {
   View,
@@ -53,7 +54,7 @@ export default function HomeScreen() {
       setError(null);
       const response = await getLogementsRecommandes(12);
       console.log('Logements recommandés récupérés:', response);
-      
+
       // Déterminer la structure de la réponse (peut être imbriquée)
       let data = [];
       if (Array.isArray(response)) {
@@ -65,12 +66,12 @@ export default function HomeScreen() {
           data = response.data.data; // Structure imbriquée
         }
       }
-      
+
       // Vérifier que data est bien un array
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error('Aucun logement trouvé ou format invalide');
       }
-      
+
       // Transformer les données de l'API pour correspondre au format attendu
       const transformed = data.map(logement => ({
         id: logement.id.toString(),
@@ -81,7 +82,7 @@ export default function HomeScreen() {
         rooms: [],
         original: logement, // Garder les données originales
       }));
-      
+
       setLogementsData(transformed);
     } catch (err) {
       console.error('Erreur lors de la récupération des logements:', err);
@@ -94,7 +95,7 @@ export default function HomeScreen() {
 
   const filtered = useMemo(() => {
     if (activeCategory === 'Tout') return logementsData;
-    return logementsData.filter((item) => 
+    return logementsData.filter((item) =>
       item.title.toLowerCase().includes(activeCategory.toLowerCase())
     );
   }, [activeCategory, logementsData]);
@@ -102,8 +103,8 @@ export default function HomeScreen() {
   const renderCard = ({ item }) => {
     const favorite = isFavorite(item.id);
     return (
-      <TouchableOpacity 
-        style={styles.card} 
+      <TouchableOpacity
+        style={styles.card}
         onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}
       >
         <Image source={{ uri: item.image }} style={styles.cardImage} />
@@ -128,7 +129,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
 
       <View style={styles.topBar}>
@@ -171,8 +172,8 @@ export default function HomeScreen() {
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity 
-          style={styles.filterButton} 
+        <TouchableOpacity
+          style={styles.filterButton}
           activeOpacity={0.7}
           onPress={() => setFilterModalVisible(true)}
         >
@@ -220,7 +221,7 @@ export default function HomeScreen() {
       ) : error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Erreur: {error}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.retryButton}
             onPress={fetchLogementsRecommandes}
           >
@@ -238,7 +239,7 @@ export default function HomeScreen() {
         />
       )}
 
-      <FilterScreen 
+      <FilterScreen
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApply={(filters) => {
@@ -246,7 +247,7 @@ export default function HomeScreen() {
           setFilterModalVisible(false);
         }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#F5E7CC',
-    paddingTop: 38,
+    paddingTop: 8,
     paddingHorizontal: 18,
   },
   topBar: {
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     marginBottom: 10,
   },
-  sectionTitle: { 
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#3B2A1B',

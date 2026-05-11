@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -23,7 +24,7 @@ export default function SubscriptionScreen({ route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       {/* Header */}
       <View style={styles.header}>
@@ -172,7 +173,7 @@ export default function SubscriptionScreen({ route }) {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

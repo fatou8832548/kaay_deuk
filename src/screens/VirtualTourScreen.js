@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -141,6 +142,14 @@ export default function VirtualTourScreen({ route }) {
           setShowAccessModal(true);
         } else {
           setVisitStartTime(Date.now());
+          // Enregistrer la visite immédiatement (fiable vs cleanup d'unmount)
+          var property = route && route.params && route.params.property;
+          var data = (property && property.original) || property;
+          if (data && data.id) {
+            enregistrerVisite3D(chercheurId, data.id, 0)
+              .then(function () { console.log('Visite 3D enregistree en base'); })
+              .catch(function (err) { console.error('Erreur enregistrement visite 3D:', err); });
+          }
         }
         setCheckingAccess(false);
       } catch (error) {
@@ -155,21 +164,6 @@ export default function VirtualTourScreen({ route }) {
     }
     checkAccess();
   }, [user, navigation]);
-
-  useEffect(function () {
-    return function () {
-      if (hasAccess && visitStartTime && user && user.chercheur) {
-        var property = route && route.params && route.params.property;
-        var data = (property && property.original) || property;
-        if (data && data.id) {
-          var dureeVisite = Math.floor((Date.now() - visitStartTime) / 1000);
-          enregistrerVisite3D(user.chercheur.id, data.id, dureeVisite)
-            .then(function () { console.log('Visite 3D enregistree'); })
-            .catch(function (err) { console.error('Erreur enregistrement visite:', err); });
-        }
-      }
-    };
-  }, [hasAccess, visitStartTime, user, route]);
 
   useEffect(function () {
     if (!hasAccess) return;
@@ -229,7 +223,7 @@ export default function VirtualTourScreen({ route }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <Modal
         visible={showAccessModal}
         transparent={true}
@@ -372,7 +366,7 @@ export default function VirtualTourScreen({ route }) {
           </View>
         </>
       ) : null}
-    </View>
+    </SafeAreaView>
   );
 }
 

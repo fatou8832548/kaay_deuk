@@ -11,6 +11,7 @@ import {
   Clipboard,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
@@ -20,7 +21,7 @@ const KAAY_DEUK_OM_NUMBER = '77 000 00 00';
 
 function generateReference(userId) {
   const ts = Date.now().toString(36).toUpperCase();
-  return KD - RES - + (userId || '0') + - + ts;
+  return `KD-RES-${userId || '0'}-${ts}`;
 }
 
 const STEPS = ['Reservation', 'Options', 'Paiement', 'Validation'];
@@ -38,16 +39,17 @@ export default function ReservationPaymentScreen({ route }) {
     [user?.id]
   );
 
-  const montant = reservation?.montantTotal ?? reservation?.acompte ?? '--';
+  const montant = reservation?.montantTotal ?? reservation?.acompte ?? 0;
+  const montantNum = typeof montant === 'number' ? montant : parseInt(String(montant).replace(/\D/g, '')) || 0;
 
   const openWave = async () => {
     setSelectedMethod('wave');
 
     // Essayer plusieurs deep links Wave pour Android
     const waveUrls = [
+      `https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${montantNum}`,
       'wavemobile://',
       'wave://',
-      'https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/'
     ];
 
     let opened = false;
@@ -116,12 +118,16 @@ export default function ReservationPaymentScreen({ route }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
-      <View style={styles.headerBg}>
-        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.headerTitle}>Reservation</Text>
-        <Text style={styles.headerSubtitle}>Phase de paiement</Text>
+
+      {/* Header avec bouton retour */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#3B2A1B" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Paiement</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -134,7 +140,7 @@ export default function ReservationPaymentScreen({ route }) {
         <View style={styles.amountBox}>
           <Text style={styles.amountLabel}>Montant a payer</Text>
           <Text style={styles.amountValue}>
-            {montant} <Text style={styles.amountCurrency}>FCFA</Text>
+            {montantNum > 0 ? montantNum.toLocaleString('fr-FR') : '--'} <Text style={styles.amountCurrency}>FCFA</Text>
           </Text>
         </View>
 
@@ -206,13 +212,13 @@ export default function ReservationPaymentScreen({ route }) {
           <Text style={styles.confirmBtnText}>J'ai envoye le paiement</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 function ConfirmationScreen({ navigation, montant, reference }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <ScrollView contentContainerStyle={styles.confirmScreen}>
         <View style={styles.confirmIconWrap}>
@@ -224,7 +230,7 @@ function ConfirmationScreen({ navigation, montant, reference }) {
         </Text>
 
         <View style={styles.confirmCard}>
-          <Row label="Montant" value={montant + ' FCFA'} />
+          <Row label="Montant" value={(montantNum > 0 ? montantNum.toLocaleString('fr-FR') : '--') + ' FCFA'} />
           <Row label="Reference" value={reference} highlight />
           <Row label="Statut" value="En attente de validation" status />
         </View>
@@ -241,7 +247,7 @@ function ConfirmationScreen({ navigation, montant, reference }) {
           <Text style={styles.homeBtnText}>Retour a l'accueil</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -280,6 +286,16 @@ const stepStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5E7CC' },
+  topHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12,
+  },
+  topHeaderTitle: { fontSize: 17, fontWeight: '700', color: '#3B2A1B' },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+    elevation: 2,
+  },
   headerBg: {
     backgroundColor: '#E9D9BC',
     alignItems: 'center',

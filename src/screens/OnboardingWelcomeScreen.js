@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardingWelcomeScreen({ onNext, onSkip }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.imageContainer}>
         {/* Remplacer par l'image réelle plus tard */}
         <Image source={require('../../assets/360_house.png')} style={styles.image} />
@@ -29,7 +30,7 @@ export default function OnboardingWelcomeScreen({ onNext, onSkip }) {
       <TouchableOpacity onPress={onSkip}>
         <Text style={styles.skip}>Passer l’introduction</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

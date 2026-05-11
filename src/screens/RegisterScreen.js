@@ -10,6 +10,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen({ onRegister, onGoToLogin }) {
@@ -79,120 +80,126 @@ export default function RegisterScreen({ onRegister, onGoToLogin }) {
     password.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      {/* Logo, titre et sous-titre en dehors de la carte */}
-      <View style={styles.headerTop}>
-        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.heading}>Créer un compte</Text>
-      </View>
-      <Text style={styles.outsideSubheading}>Commencez votre recherche immobilière</Text>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          {/* Logo, titre et sous-titre déplacés en dehors de la carte */}
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Logo, titre et sous-titre en dehors de la carte */}
+        <View style={styles.headerTop}>
+          <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.heading}>Créer un compte</Text>
+        </View>
+        <Text style={styles.outsideSubheading}>Commencez votre recherche immobilière</Text>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.card}>
+            {/* Logo, titre et sous-titre déplacés en dehors de la carte */}
 
-          <View style={styles.inputGroup}>
-            <TextInput
-              style={[styles.input, errors.fullName && styles.inputError]}
-              placeholder="Nom complet"
-              placeholderTextColor="#8A7F74"
-              value={fullName}
-              onChangeText={(text) => {
-                setFullName(text);
-                if (errors.fullName) {
-                  setErrors({ ...errors, fullName: null });
-                }
-              }}
-            />
-            {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholder="Adresse e-mail"
-              placeholderTextColor="#8A7F74"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) {
-                  setErrors({ ...errors, email: null });
-                }
-              }}
-            />
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <TextInput
-              style={[styles.input, errors.phone && styles.inputError]}
-              placeholder="Téléphone"
-              placeholderTextColor="#8A7F74"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={(text) => {
-                setPhone(text);
-                if (errors.phone) {
-                  setErrors({ ...errors, phone: null });
-                }
-              }}
-            />
-            {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.passwordContainer}>
+            <View style={styles.inputGroup}>
               <TextInput
-                style={[styles.passwordInput, errors.password && styles.inputError]}
-                placeholder="Mot de passe (min. 6 caractères)"
+                style={[styles.input, errors.fullName && styles.inputError]}
+                placeholder="Nom complet"
                 placeholderTextColor="#8A7F74"
-                secureTextEntry={!showPassword}
-                value={password}
+                value={fullName}
                 onChangeText={(text) => {
-                  setPassword(text);
-                  if (errors.password) {
-                    setErrors({ ...errors, password: null });
+                  setFullName(text);
+                  if (errors.fullName) {
+                    setErrors({ ...errors, fullName: null });
                   }
                 }}
               />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off' : 'eye'}
-                  size={22}
-                  color="#8A7F74"
-                />
-              </TouchableOpacity>
+              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
             </View>
-            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                placeholder="Adresse e-mail"
+                placeholderTextColor="#8A7F74"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) {
+                    setErrors({ ...errors, email: null });
+                  }
+                }}
+              />
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={[styles.input, errors.phone && styles.inputError]}
+                placeholder="Téléphone"
+                placeholderTextColor="#8A7F74"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  if (errors.phone) {
+                    setErrors({ ...errors, phone: null });
+                  }
+                }}
+              />
+              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[styles.passwordInput, errors.password && styles.inputError]}
+                  placeholder="Mot de passe (min. 6 caractères)"
+                  placeholderTextColor="#8A7F74"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) {
+                      setErrors({ ...errors, password: null });
+                    }
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={22}
+                    color="#8A7F74"
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            </View>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              disabled={!canSubmit}
+              onPress={handleSubmit}
+            >
+              <Text style={styles.primaryButtonText}>S'inscrire gratuitement</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={onGoToLogin} style={styles.secondaryLink}>
+              <Text style={styles.secondaryText}>
+                Déjà un compte ? <Text style={styles.linkText}>Se connecter</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.primaryButton}
-            disabled={!canSubmit}
-            onPress={handleSubmit}
-          >
-            <Text style={styles.primaryButtonText}>S'inscrire gratuitement</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={onGoToLogin} style={styles.secondaryLink}>
-            <Text style={styles.secondaryText}>
-              Déjà un compte ? <Text style={styles.linkText}>Se connecter</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F5E7CC',
+  },
   headerTop: {
     alignItems: 'center',
     marginBottom: 8,

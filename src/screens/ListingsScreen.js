@@ -10,6 +10,7 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
 import { useNavigation } from '@react-navigation/native';
 import { MapPin, Search, Filter } from 'lucide-react-native';
@@ -36,7 +37,7 @@ const ListingsScreen = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const options = {
         page: 1,
         limit: 20,
@@ -56,7 +57,7 @@ const ListingsScreen = () => {
       }
 
       const response = await getLogements(options);
-      
+
       // Déterminer la structure de la réponse (peut être imbriquée)
       let data = [];
       if (Array.isArray(response)) {
@@ -68,12 +69,12 @@ const ListingsScreen = () => {
           data = response.data.data; // Structure imbriquée
         }
       }
-      
+
       // Vérifier que data est bien un array
       if (!Array.isArray(data)) {
         throw new Error('Format de réponse invalide');
       }
-      
+
       const transformed = data.map(logement => ({
         id: logement.id.toString(),
         title: logement.titre,
@@ -105,7 +106,7 @@ const ListingsScreen = () => {
   const renderCard = ({ item }) => {
     const favorite = isFavorite(item.id);
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}
       >
@@ -145,7 +146,7 @@ const ListingsScreen = () => {
 
           <View style={styles.cardFooter}>
             <Text style={styles.cardPrice}>{item.price}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.viewButton}
               onPress={() => navigation.navigate('PropertyDetailScreen', { property: item })}
             >
@@ -158,13 +159,13 @@ const ListingsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Annonces</Text>
       </View>
 
       {/* Barre de recherche et filtres */}
-      <ScrollView 
+      <ScrollView
         style={styles.filterSection}
         showsVerticalScrollIndicator={false}
       >
@@ -204,7 +205,7 @@ const ListingsScreen = () => {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.applyButton}
           onPress={handleApplyFilters}
         >
@@ -221,7 +222,7 @@ const ListingsScreen = () => {
       ) : error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Erreur: {error}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.retryButton}
             onPress={fetchLogements}
           >
@@ -231,7 +232,7 @@ const ListingsScreen = () => {
       ) : logementsData.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Aucune annonce trouvée</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.resetButton}
             onPress={() => {
               setSearchVille('');
@@ -252,7 +253,7 @@ const ListingsScreen = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

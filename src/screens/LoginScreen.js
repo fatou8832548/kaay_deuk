@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen({ onLogin, onGoToRegister }) {
@@ -54,86 +55,92 @@ export default function LoginScreen({ onLogin, onGoToRegister }) {
   const canSubmit = email.trim().length > 0 && password.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.headerTop}>
-        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.heading}>Bon retour !</Text>
-      </View>
-      {/* Ajout du texte en dehors de la carte */}
-      <Text style={styles.outsideSubheading}>Connectez-vous pour continuer</Text>
-      <View style={styles.card}>
-        {/* Le texte est maintenant en dehors de la carte */}
-
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder="Adresse e-mail"
-            placeholderTextColor="#8A7F74"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) {
-                setErrors({ ...errors, email: null });
-              }
-            }}
-          />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.headerTop}>
+          <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.heading}>Bon retour !</Text>
         </View>
+        {/* Ajout du texte en dehors de la carte */}
+        <Text style={styles.outsideSubheading}>Connectez-vous pour continuer</Text>
+        <View style={styles.card}>
+          {/* Le texte est maintenant en dehors de la carte */}
 
-        <View style={styles.inputGroup}>
-          <View style={styles.passwordContainer}>
+          <View style={styles.inputGroup}>
             <TextInput
-              style={[styles.passwordInput, errors.password && styles.inputError]}
-              placeholder="Mot de passe"
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="Adresse e-mail"
               placeholderTextColor="#8A7F74"
-              secureTextEntry={!showPassword}
-              value={password}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
               onChangeText={(text) => {
-                setPassword(text);
-                if (errors.password) {
-                  setErrors({ ...errors, password: null });
+                setEmail(text);
+                if (errors.email) {
+                  setErrors({ ...errors, email: null });
                 }
               }}
             />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={22}
-                color="#8A7F74"
-              />
-            </TouchableOpacity>
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+          <View style={styles.inputGroup}>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.passwordInput, errors.password && styles.inputError]}
+                placeholder="Mot de passe"
+                placeholderTextColor="#8A7F74"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) {
+                    setErrors({ ...errors, password: null });
+                  }
+                }}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={22}
+                  color="#8A7F74"
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+          </View>
+
+          <TouchableOpacity style={styles.forgotLink} onPress={() => null}>
+            <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.primaryButton, !canSubmit && styles.disabledButton]} disabled={!canSubmit} onPress={handleSubmit}>
+            <Text style={styles.primaryButtonText}>Se connecter</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onGoToRegister} style={styles.secondaryLink}>
+            <Text style={styles.secondaryText}>
+              Nouveau sur Kaay Dëk ? <Text style={styles.linkText}>Créer un compte</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.forgotLink} onPress={() => null}>
-          <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.primaryButton, !canSubmit && styles.disabledButton]} disabled={!canSubmit} onPress={handleSubmit}>
-          <Text style={styles.primaryButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={onGoToRegister} style={styles.secondaryLink}>
-          <Text style={styles.secondaryText}>
-            Nouveau sur Kaay Dëk ? <Text style={styles.linkText}>Créer un compte</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
 
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F5E7CC',
+  },
   headerTop: {
     alignItems: 'center',
     marginBottom: 18,

@@ -10,6 +10,7 @@ import {
   Clipboard,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
@@ -40,9 +41,9 @@ export default function VisitPaymentScreen({ route }) {
 
     // Essayer plusieurs deep links Wave pour Android
     const waveUrls = [
+      `https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${VISIT_PRICE}`,
       'wavemobile://',
       'wave://',
-      'https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/'
     ];
 
     let opened = false;
@@ -93,7 +94,7 @@ export default function VisitPaymentScreen({ route }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
 
       {/* Header */}
@@ -206,13 +207,13 @@ export default function VisitPaymentScreen({ route }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 function ConfirmationScreen({ navigation, reference, property }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <ScrollView contentContainerStyle={styles.confirmScreen}>
         <View style={styles.confirmIconWrap}>
@@ -260,7 +261,7 @@ function ConfirmationScreen({ navigation, reference, property }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

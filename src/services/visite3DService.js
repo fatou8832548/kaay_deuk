@@ -44,11 +44,11 @@ export const verifierAccesVisite3D = async (chercheurId) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Erreur lors de la vérification d\'accès');
+      throw new Error((errorData.data?.message) || errorData.message || 'Erreur lors de la vérification d\'accès');
     }
 
-    const data = await response.json();
-    return data;
+    const json = await response.json();
+    return json.data || json;
   } catch (error) {
     console.error('Erreur verifierAccesVisite3D:', error);
     throw error;
@@ -86,11 +86,11 @@ export const enregistrerVisite3D = async (chercheurId, logementId, dureeVisite =
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Erreur lors de l\'enregistrement de la visite');
+      throw new Error((errorData.data?.message) || errorData.message || 'Erreur lors de l\'enregistrement de la visite');
     }
 
-    const data = await response.json();
-    return data;
+    const json = await response.json();
+    return json.data || json;
   } catch (error) {
     console.error('Erreur enregistrerVisite3D:', error);
     throw error;

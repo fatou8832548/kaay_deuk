@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardingScreen({ onNext, onBack }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.imageContainer}>
         {/* Remplacer par l'image réelle plus tard */}
         <Image source={require('../../assets/calendar_hand.png')} style={styles.image} />
@@ -23,7 +24,7 @@ export default function OnboardingScreen({ onNext, onBack }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.retour}>Retour</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

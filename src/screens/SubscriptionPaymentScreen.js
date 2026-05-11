@@ -11,6 +11,7 @@ import {
   Clipboard,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
@@ -131,7 +132,7 @@ export default function SubscriptionPaymentScreen({ route }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       {/* Header */}
       <View style={styles.header}>
@@ -255,13 +256,13 @@ export default function SubscriptionPaymentScreen({ route }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 function ConfirmationScreen({ navigation, plan, reference }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <ScrollView contentContainerStyle={styles.confirmScreen}>
 
@@ -304,7 +305,7 @@ function ConfirmationScreen({ navigation, plan, reference }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

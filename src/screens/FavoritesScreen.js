@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, MapPin } from 'lucide-react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useNavigation } from '@react-navigation/native';
@@ -11,7 +12,7 @@ export default function FavoritesScreen() {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5E7CC" />
       <Text style={styles.pageTitle}>Mes favoris</Text>
       <Text style={styles.subTitle}>{favorites.length} mis en favoris</Text>
@@ -52,7 +53,7 @@ export default function FavoritesScreen() {
         )}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5E7CC',
-    paddingTop: 32,
+    paddingTop: 8,
     paddingHorizontal: 16,
   },
   pageTitle: {

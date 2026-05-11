@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
@@ -10,7 +12,9 @@ const LONGITUDE = -16.9333;
 const LATITUDE_DELTA = 0.09;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
-export default function LocationScreen({ onApply }) {
+export default function LocationScreen({ onApply, navigation: navProp }) {
+  const navHook = useNavigation();
+  const navigation = navProp || navHook;
   const [selectedRegion, setSelectedRegion] = useState({
     latitude: LATITUDE,
     longitude: LONGITUDE,
@@ -33,7 +37,7 @@ export default function LocationScreen({ onApply }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <MapView
         style={styles.map}
@@ -45,6 +49,11 @@ export default function LocationScreen({ onApply }) {
         showsCompass
         toolbarEnabled={false}
       />
+
+      {/* Bouton retour flottant */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <ArrowLeft color="#3B2A1B" size={22} />
+      </TouchableOpacity>
 
       <View style={styles.footer}>
         <View style={styles.handle} />
@@ -59,7 +68,7 @@ export default function LocationScreen({ onApply }) {
       <View style={styles.floatingPin}>
         <MapPin color="#3B2A1B" size={30} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -70,6 +79,22 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   floatingPin: {
     position: 'absolute',

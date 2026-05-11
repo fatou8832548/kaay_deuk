@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions
 import { useFavorites } from '../context/FavoritesContext';
 import { Linking } from 'react-native';
 import { API_CONFIG } from '../config/apiConfig';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function PropertyDetailScreen({ route, navigation }) {
   const { property } = route.params;
@@ -54,6 +55,11 @@ export default function PropertyDetailScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <View style={{ flex: 1 }}>
         <Image source={{ uri: mainImage }} style={[styles.image, { height: height * 0.42 }]} />
+
+        {/* Bouton retour flottant */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color="#3B2A1B" />
+        </TouchableOpacity>
         <View style={styles.detailsOverlay}>
           <ScrollView style={styles.panelScroll} contentContainerStyle={styles.panelContent} showsVerticalScrollIndicator={false}>
             <View style={styles.panel}>
@@ -156,6 +162,22 @@ export default function PropertyDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7E9D6' },
   image: { width: '100%', resizeMode: 'cover' },
+  backButton: {
+    position: 'absolute',
+    top: 44,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
   detailsOverlay: {
     position: 'absolute',
     left: 0,
