@@ -44,7 +44,7 @@ export default function SubscriptionPaymentScreen({ route }) {
     const waveUrls = [
       'wavemobile://',
       'wave://',
-      'https://pay.wave.com/m/M_nMhHecBbBdnX/c/sn/'
+      'https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/'
     ];
 
     let opened = false;
