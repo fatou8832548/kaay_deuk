@@ -10,15 +10,17 @@ import {
   Image,
   Clipboard,
   StatusBar,
+  Platform,
 } from 'react-native';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
 
 // Numéro de réception des paiements Kaay Dëk
-const KAAY_DEUK_WAVE_NUMBER = '77 000 00 00'; // ← À remplacer par votre numéro Wave
-const KAAY_DEUK_OM_NUMBER = '77 000 00 00';   // ← À remplacer par votre numéro Orange Money
+const KAAY_DEUK_WAVE_NUMBER = '77 471 91 08'; // ← À remplacer par votre numéro Wave
+const KAAY_DEUK_OM_NUMBER = '77 471 91 08';   // ← À remplacer par votre numéro Orange Money
 
 function generateReference(userId, planId) {
   const ts = Date.now().toString(36).toUpperCase();
@@ -41,25 +43,47 @@ export default function SubscriptionPaymentScreen({ route }) {
   const openWave = async () => {
     setSelectedMethod('wave');
 
-    // Essayer plusieurs deep links Wave pour Android
-    const waveUrls = [
-      'wavemobile://',
-      'wave://',
-      'https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/'
-    ];
-
     let opened = false;
+    const amount = plan?.prix || plan?.price || plan?.montant || '';
+    const paymentUrl = amount
+      ? `https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${amount}`
+      : 'https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/';
 
-    for (const url of waveUrls) {
+    if (Platform.OS === 'android') {
       try {
-        const canOpen = await Linking.canOpenURL(url).catch(() => false);
-        if (canOpen) {
-          await Linking.openURL(url);
-          opened = true;
-          break;
-        }
+        await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+          data: paymentUrl,
+          packageName: 'com.wave.money',
+          flags: 268435456, // FLAG_ACTIVITY_NEW_TASK
+        });
+        opened = true;
       } catch (error) {
-        console.log(`Échec avec ${url}:`, error.message);
+        console.log('IntentLauncher Wave échoué:', error.message);
+        // Fallback : intent URL via Linking
+        try {
+          const fallback = encodeURIComponent('https://play.google.com/store/apps/details?id=com.wave.money');
+          const intentUrl = `intent://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/${amount ? '?amount=' + amount : ''}#Intent;scheme=https;package=com.wave.money;S.browser_fallback_url=${fallback};end`;
+          await Linking.openURL(intentUrl);
+          opened = true;
+        } catch (_) { }
+      }
+    } else {
+      const waveUrls = [
+        paymentUrl,
+        'wavemobile://',
+        'wave://',
+      ];
+      for (const url of waveUrls) {
+        try {
+          const canOpen = await Linking.canOpenURL(url).catch(() => false);
+          if (canOpen) {
+            await Linking.openURL(url);
+            opened = true;
+            break;
+          }
+        } catch (error) {
+          console.log(`Échec avec ${url}:`, error.message);
+        }
       }
     }
 

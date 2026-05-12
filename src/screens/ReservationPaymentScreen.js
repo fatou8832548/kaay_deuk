@@ -10,14 +10,15 @@ import {
   Image,
   Clipboard,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
 
-const KAAY_DEUK_WAVE_NUMBER = '77 000 00 00';
-const KAAY_DEUK_OM_NUMBER = '77 000 00 00';
+const KAAY_DEUK_WAVE_NUMBER = '77 471 91 08';
+const KAAY_DEUK_OM_NUMBER = '77 471 91 08';
 
 function generateReference(userId) {
   const ts = Date.now().toString(36).toUpperCase();
@@ -45,25 +46,34 @@ export default function ReservationPaymentScreen({ route }) {
   const openWave = async () => {
     setSelectedMethod('wave');
 
-    // Essayer plusieurs deep links Wave pour Android
-    const waveUrls = [
-      `https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${montantNum}`,
-      'wavemobile://',
-      'wave://',
-    ];
-
     let opened = false;
 
-    for (const url of waveUrls) {
+    if (Platform.OS === 'android') {
+      const fallback = encodeURIComponent('https://play.google.com/store/apps/details?id=com.wave.money');
+      const intentUrl = `intent://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${montantNum}#Intent;scheme=https;package=com.wave.money;S.browser_fallback_url=${fallback};end`;
       try {
-        const canOpen = await Linking.canOpenURL(url).catch(() => false);
-        if (canOpen) {
-          await Linking.openURL(url);
-          opened = true;
-          break;
-        }
+        await Linking.openURL(intentUrl);
+        opened = true;
       } catch (error) {
-        console.log(`Échec avec ${url}:`, error.message);
+        console.log('Intent URL Wave échoué:', error.message);
+      }
+    } else {
+      const waveUrls = [
+        `https://pay.wave.com/m/M_sn_KzQdzbz_xnrU/c/sn/?amount=${montantNum}`,
+        'wavemobile://',
+        'wave://',
+      ];
+      for (const url of waveUrls) {
+        try {
+          const canOpen = await Linking.canOpenURL(url).catch(() => false);
+          if (canOpen) {
+            await Linking.openURL(url);
+            opened = true;
+            break;
+          }
+        } catch (error) {
+          console.log(`Échec avec ${url}:`, error.message);
+        }
       }
     }
 

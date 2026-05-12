@@ -98,7 +98,7 @@ curl -X 'GET' \
           "utilisateur": {
             "id": 1,
             "nom": "Super Admin",
-            "telephone": "+221 77 000 00 00",
+            "telephone": "+221 77 471 91 08",
             "email": "admin@kaaydeuk.com"
           }
         }
