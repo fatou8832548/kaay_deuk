@@ -135,7 +135,10 @@ export default function VirtualTourScreen({ route }) {
         }
         setCheckingAccess(true);
         var chercheurId = user.chercheur.id;
-        var result = await verifierAccesVisite3D(chercheurId);
+        var property = route && route.params && route.params.property;
+        var data = (property && property.original) || property;
+        var logementId = data && data.id;
+        var result = await verifierAccesVisite3D(chercheurId, logementId);
         setAccessInfo(result);
         setHasAccess(result.acces);
         if (!result.acces) {
@@ -143,8 +146,6 @@ export default function VirtualTourScreen({ route }) {
         } else {
           setVisitStartTime(Date.now());
           // Enregistrer la visite immédiatement (fiable vs cleanup d'unmount)
-          var property = route && route.params && route.params.property;
-          var data = (property && property.original) || property;
           if (data && data.id) {
             enregistrerVisite3D(chercheurId, data.id, 0)
               .then(function () { console.log('Visite 3D enregistree en base'); })

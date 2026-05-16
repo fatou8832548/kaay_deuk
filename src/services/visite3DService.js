@@ -21,18 +21,19 @@ const getAuthToken = async () => {
 };
 
 /**
- * Vérifie si un chercheur peut accéder à une visite 3D
+ * Vérifie si un chercheur peut accéder à une visite 3D pour un logement donné
  * @param {number} chercheurId - ID du chercheur
+ * @param {number} logementId - ID du logement
  * @returns {Promise<Object>} - Statut d'accès
  */
-export const verifierAccesVisite3D = async (chercheurId) => {
+export const verifierAccesVisite3D = async (chercheurId, logementId) => {
   try {
     const token = await getAuthToken();
     if (!token) {
       throw new Error('Utilisateur non authentifié');
     }
 
-    const url = `${API_BASE_URL}/visites-3d/verifier-acces/${chercheurId}`;
+    const url = `${API_BASE_URL}/visites-3d/verifier-acces/${chercheurId}/${logementId}`;
 
     const response = await fetch(url, {
       method: 'GET',
