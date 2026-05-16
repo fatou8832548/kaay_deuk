@@ -172,9 +172,10 @@ export default function VirtualTourScreen({ route }) {
     var data = (property && property.original) || property;
     if (data && data.images3D && Array.isArray(data.images3D)) {
       var roomDefs = data.images3D.map(function (img, i) {
+        var roomName = img.titre || img.lieu || img.label || img.description || ('Piece ' + (i + 1));
         return {
-          key: img.label || ('Piece ' + (i + 1)),
-          label: img.label || ('Piece ' + (i + 1)),
+          key: roomName,
+          label: roomName,
           icon: img.icon || 'home-outline',
           url: img.url,
         };
