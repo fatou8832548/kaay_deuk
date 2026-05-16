@@ -189,17 +189,20 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Catégories</Text>
       </View>
 
-      <FlatList
-        data={categories}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.categories}
         contentContainerStyle={styles.categoriesContent}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => {
+        nestedScrollEnabled
+        directionalLockEnabled
+        keyboardShouldPersistTaps="handled"
+      >
+        {categories.map((item) => {
           const active = item === activeCategory;
           return (
             <TouchableOpacity
+              key={item}
               style={[styles.categoryPill, active && styles.categoryPillActive]}
               onPress={() => setActiveCategory(item)}
               activeOpacity={0.7}
@@ -207,8 +210,8 @@ export default function HomeScreen() {
               <Text style={[styles.categoryText, active && styles.categoryTextActive]}>{item}</Text>
             </TouchableOpacity>
           );
-        }}
-      />
+        })}
+      </ScrollView>
 
       <View style={styles.recommendedHeader}>
         <Text style={styles.recommendedTitle}>Recommandés</Text>
