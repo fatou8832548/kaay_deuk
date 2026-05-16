@@ -17,6 +17,7 @@ import VirtualTourScreen from '../screens/VirtualTourScreen';
 import SubscriptionScreen from '../screens/SubscriptionScreen';
 import SubscriptionPaymentScreen from '../screens/SubscriptionPaymentScreen';
 import VisitPaymentScreen from '../screens/VisitPaymentScreen';
+import BuyBriquesScreen from '../screens/BuyBriquesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -70,6 +71,7 @@ export default function MainTabNavigator({ onLogout }) {
         <Stack.Screen name="Subscription" component={SubscriptionScreen} />
         <Stack.Screen name="SubscriptionPayment" component={SubscriptionPaymentScreen} />
         <Stack.Screen name="VisitPayment" component={VisitPaymentScreen} />
+        <Stack.Screen name="BuyBriques" component={BuyBriquesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

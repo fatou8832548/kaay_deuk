@@ -238,7 +238,14 @@ export default function VirtualTourScreen({ route }) {
               {accessInfo && accessInfo.nombreVisitesEffectuees > 0
                 ? 'Vous avez deja effectue ' + accessInfo.nombreVisitesEffectuees + ' visite' + (accessInfo.nombreVisitesEffectuees > 1 ? 's' : '') + ' 3D.\n\n'
                 : ''}
-              {'Votre premiere visite 3D etait gratuite !\nPayez 200 FCFA pour continuer.'}
+              {'Votre premiere visite 3D etait gratuite !\n'}
+              {'Il vous faut '}
+              <Text style={{ fontWeight: 'bold', color: '#FF9500' }}>200 Briques</Text>
+              {' pour continuer.\n\n'}
+              {'Solde actuel : '}
+              <Text style={{ fontWeight: 'bold', color: '#FF9500' }}>
+                {accessInfo && accessInfo.briques !== undefined ? accessInfo.briques : '?'} Briques
+              </Text>
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -254,14 +261,10 @@ export default function VirtualTourScreen({ route }) {
                 style={styles.modalButtonPrimary}
                 onPress={function () {
                   setShowAccessModal(false);
-                  var property = route && route.params && route.params.property;
-                  navigation.navigate('VisitPayment', {
-                    property: property,
-                    nombreVisitesEffectuees: (accessInfo && accessInfo.nombreVisitesEffectuees) || 1,
-                  });
+                  navigation.navigate('BuyBriques');
                 }}
               >
-                <Text style={styles.modalButtonPrimaryText}>Payer 200 FCFA</Text>
+                <Text style={styles.modalButtonPrimaryText}>Acheter des Briques</Text>
               </TouchableOpacity>
             </View>
           </View>

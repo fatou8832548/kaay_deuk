@@ -68,22 +68,26 @@ export default function HomeScreen() {
       }
 
       // Vérifier que data est bien un array
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error('Aucun logement trouvé ou format invalide');
+      if (!Array.isArray(data)) {
+        data = [];
       }
 
-      // Transformer les données de l'API pour correspondre au format attendu
-      const transformed = data.map(logement => ({
-        id: logement.id.toString(),
-        title: logement.titre,
-        location: `${logement.adresse} (${logement.ville})`,
-        price: `${logement.prix.toLocaleString('fr-FR')} FCFA/mois`,
-        image: `${API_CONFIG.BASE_URL}${logement.images && logement.images.length > 0 ? logement.images[0].url : ''}`,
-        rooms: [],
-        original: logement, // Garder les données originales
-      }));
-
-      setLogementsData(transformed);
+      // Si pas de données, on affiche juste l'écran vide
+      if (data.length === 0) {
+        setLogementsData([]);
+      } else {
+        // Transformer les données de l'API pour correspondre au format attendu
+        const transformed = data.map(logement => ({
+          id: logement.id.toString(),
+          title: logement.titre,
+          location: `${logement.adresse} (${logement.ville})`,
+          price: `${logement.prix.toLocaleString('fr-FR')} FCFA/mois`,
+          image: `${API_CONFIG.BASE_URL}${logement.images && logement.images.length > 0 ? logement.images[0].url : ''}`,
+          rooms: [],
+          original: logement, // Garder les données originales
+        }));
+        setLogementsData(transformed);
+      }
     } catch (err) {
       console.error('Erreur lors de la récupération des logements:', err);
       setError(err.message);
@@ -218,15 +222,11 @@ export default function HomeScreen() {
           <ActivityIndicator size="large" color="#C48A5A" />
           <Text style={styles.loadingText}>Chargement des logements...</Text>
         </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Erreur: {error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={fetchLogementsRecommandes}
-          >
-            <Text style={styles.retryButtonText}>Réessayer</Text>
-          </TouchableOpacity>
+      ) : logementsData.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>📭</Text>
+          <Text style={styles.emptyText}>Aucun logement disponible</Text>
+          <Text style={styles.emptySubtext}>Revenez bientôt pour découvrir de nouvelles annonces</Text>
         </View>
       ) : (
         <FlatList
@@ -458,6 +458,29 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: '#6E6258',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3B2A1B',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#8A7F74',
+    textAlign: 'center',
   },
   errorContainer: {
     flex: 1,
