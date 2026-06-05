@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { API_CONFIG } from '../config/apiConfig';
 import { useUser } from '../context/UserContext';
 import { verifierAccesVisite3D, enregistrerVisite3D } from '../services/visite3DService';
+import { logout as logoutService } from '../services/authService';
 
 // Helpers
 async function urlToDataUri(urlPath) {
@@ -107,7 +108,7 @@ function buildHtml(dataUri) {
 
 export default function VirtualTourScreen({ route, onRequestLogin }) {
   var navigation = useNavigation();
-  var { user, freeVisitUsed, markFreeVisitAsUsed } = useUser();
+  var { user, setUser, freeVisitUsed, markFreeVisitAsUsed } = useUser();
 
   var [roomIndex, setRoomIndex] = useState(0);
   var [webviewKey, setWebviewKey] = useState(0);
@@ -193,11 +194,45 @@ export default function VirtualTourScreen({ route, onRequestLogin }) {
       } catch (error) {
         console.error('Erreur verification acces:', error);
         setCheckingAccess(false);
-        Alert.alert(
-          'Erreur',
-          "Impossible de verifier l'acces aux visites 3D.",
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+
+        // Vérifier si c'est une erreur d'authentification (token invalide/expiré)
+        if (error.isAuthError || error.statusCode === 401 || error.message.includes('JWT') || error.message.includes('token')) {
+          // Déconnecter l'utilisateur
+          try {
+            await logoutService();
+            setUser(null);
+          } catch (logoutError) {
+            console.error('Erreur lors de la déconnexion:', logoutError);
+          }
+
+          Alert.alert(
+            'Session expirée',
+            'Votre session a expiré. Veuillez vous reconnecter pour continuer.',
+            [
+              {
+                text: 'Se connecter',
+                onPress: () => {
+                  navigation.goBack();
+                  if (onRequestLogin) {
+                    setTimeout(() => onRequestLogin(), 100);
+                  }
+                }
+              },
+              {
+                text: 'Retour',
+                style: 'cancel',
+                onPress: () => navigation.goBack()
+              }
+            ]
+          );
+        } else {
+          // Autre type d'erreur
+          Alert.alert(
+            'Erreur',
+            error.message || "Impossible de vérifier l'accès aux visites 3D.",
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        }
       }
     }
     checkAccess();

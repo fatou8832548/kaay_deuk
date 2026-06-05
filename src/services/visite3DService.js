@@ -44,6 +44,14 @@ export const verifierAccesVisite3D = async (chercheurId, logementId) => {
     });
 
     if (!response.ok) {
+      // Vérifier si c'est une erreur d'authentification (401)
+      if (response.status === 401) {
+        const error = new Error('Token JWT invalide ou expiré');
+        error.isAuthError = true;
+        error.statusCode = 401;
+        throw error;
+      }
+
       const errorData = await response.json();
       throw new Error((errorData.data?.message) || errorData.message || 'Erreur lors de la vérification d\'accès');
     }
@@ -86,6 +94,14 @@ export const enregistrerVisite3D = async (chercheurId, logementId, dureeVisite =
     });
 
     if (!response.ok) {
+      // Vérifier si c'est une erreur d'authentification (401)
+      if (response.status === 401) {
+        const error = new Error('Token JWT invalide ou expiré');
+        error.isAuthError = true;
+        error.statusCode = 401;
+        throw error;
+      }
+
       const errorData = await response.json();
       throw new Error((errorData.data?.message) || errorData.message || 'Erreur lors de l\'enregistrement de la visite');
     }
