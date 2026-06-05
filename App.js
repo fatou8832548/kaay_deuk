@@ -34,7 +34,7 @@ function AppContent() {
 
       return () => clearTimeout(timer);
     }
-  }, [userInteractions, route]);
+  }, [userInteractions, route, shouldShowLoginSuggestion, markLoginSuggestionShown]);
 
   // Vérifier l'utilisateur au démarrage de l'app
   useEffect(() => {

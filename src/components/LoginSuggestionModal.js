@@ -7,10 +7,8 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  Image,
 } from 'react-native';
 import { UserPlus, X, Heart, Star, Shield } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,7 +45,7 @@ export default function LoginSuggestionModal({ visible, onClose, onLogin }) {
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, slideAnim, fadeAnim]);
 
   const handleLogin = () => {
     onClose();
