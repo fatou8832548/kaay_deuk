@@ -105,7 +105,7 @@ function buildHtml(dataUri) {
 </html>`;
 }
 
-export default function VirtualTourScreen({ route }) {
+export default function VirtualTourScreen({ route, onRequestLogin }) {
   var navigation = useNavigation();
   var { user, freeVisitUsed, markFreeVisitAsUsed } = useUser();
 
@@ -144,8 +144,18 @@ export default function VirtualTourScreen({ route }) {
             // Visite gratuite déjà utilisée, demander authentification
             Alert.alert(
               'Authentification requise',
-              'Votre première visite virtuelle gratuite a déjà été utilisée.\n\nConnectez-vous pour continuer à explorer nos logements.',
+              'Votre première visite virtuelle gratuite a déjà été utilisée.\n\nConnectez-vous pour continuer à explorer nos logements et effectuer d\'autres visites.',
               [
+                {
+                  text: 'Se connecter',
+                  onPress: () => {
+                    navigation.goBack();
+                    if (onRequestLogin) {
+                      // Petit délai pour laisser le temps à la navigation de se faire
+                      setTimeout(() => onRequestLogin(), 100);
+                    }
+                  }
+                },
                 {
                   text: 'Retour',
                   style: 'cancel',

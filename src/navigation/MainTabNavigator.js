@@ -69,7 +69,9 @@ export default function MainTabNavigator({ onLogout, onRequestLogin }) {
         <Stack.Screen name="ReservationPayment" component={ReservationPaymentScreen} />
         <Stack.Screen name="PropertyDetailScreen" component={PropertyDetailScreen} />
         <Stack.Screen name="ReservationScreen" component={ReservationScreen} />
-        <Stack.Screen name="VirtualTourScreen" component={VirtualTourScreen} />
+        <Stack.Screen name="VirtualTourScreen">
+          {(props) => <VirtualTourScreen {...props} onRequestLogin={onRequestLogin} />}
+        </Stack.Screen>
         <Stack.Screen name="Subscription" component={SubscriptionScreen} />
         <Stack.Screen name="SubscriptionPayment" component={SubscriptionPaymentScreen} />
         <Stack.Screen name="VisitPayment" component={VisitPaymentScreen} />
