@@ -127,7 +127,7 @@ export default function VirtualTourScreen({ route }) {
     async function checkAccess() {
       try {
         setCheckingAccess(true);
-        
+
         // Cas 1: Utilisateur NON authentifié
         if (!user || !user.chercheur) {
           // Vérifier si la visite gratuite a déjà été utilisée
@@ -146,10 +146,10 @@ export default function VirtualTourScreen({ route }) {
               'Authentification requise',
               'Votre première visite virtuelle gratuite a déjà été utilisée.\n\nConnectez-vous pour continuer à explorer nos logements.',
               [
-                { 
-                  text: 'Retour', 
+                {
+                  text: 'Retour',
                   style: 'cancel',
-                  onPress: () => navigation.goBack() 
+                  onPress: () => navigation.goBack()
                 }
               ]
             );
@@ -167,7 +167,7 @@ export default function VirtualTourScreen({ route }) {
         setAccessInfo(result);
         setHasAccess(result.acces);
         setIsGuestMode(false);
-        
+
         if (!result.acces) {
           setShowAccessModal(true);
         } else {

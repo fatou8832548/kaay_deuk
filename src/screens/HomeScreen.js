@@ -146,8 +146,8 @@ export default function HomeScreen({ onRequestLogin }) {
 
         <View style={styles.topActions}>
           {!user && onRequestLogin && (
-            <TouchableOpacity 
-              style={styles.loginButton} 
+            <TouchableOpacity
+              style={styles.loginButton}
               activeOpacity={0.7}
               onPress={onRequestLogin}
             >
