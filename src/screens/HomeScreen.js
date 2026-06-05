@@ -15,7 +15,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { MapPin, Bell, Search, Filter, Settings, LogIn } from 'lucide-react-native';
+import { MapPin, Bell, Search, Filter, Settings } from 'lucide-react-native';
 import SettingsScreen from './SettingsScreen';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import FilterScreen from './FilterScreen';
@@ -36,7 +36,7 @@ export default function HomeScreen({ onRequestLogin }) {
   const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
-  const { user } = useUser();
+  const { user, incrementInteractions } = useUser();
 
   // Récupérer les logements recommandés au montage du composant
   useEffect(() => {
@@ -121,9 +121,17 @@ export default function HomeScreen({ onRequestLogin }) {
             <Text style={styles.cardPrice}>{item.price}</Text>
             <TouchableOpacity
               style={styles.favoriteButton}
-              onPress={e => {
+              onPress={async (e) => {
                 e.stopPropagation();
-                favorite ? removeFavorite(item.id) : addFavorite(item);
+                if (favorite) {
+                  removeFavorite(item.id);
+                } else {
+                  addFavorite(item);
+                  // Incrémenter les interactions pour les utilisateurs non connectés
+                  if (!user && incrementInteractions) {
+                    await incrementInteractions();
+                  }
+                }
               }}
             >
               <Text style={[styles.favoriteText, favorite && { color: '#C48A5A' }]}>{favorite ? '♥' : '♡'}</Text>
@@ -145,16 +153,6 @@ export default function HomeScreen({ onRequestLogin }) {
         </View>
 
         <View style={styles.topActions}>
-          {!user && onRequestLogin && (
-            <TouchableOpacity
-              style={styles.loginButton}
-              activeOpacity={0.7}
-              onPress={onRequestLogin}
-            >
-              <LogIn color="#FFF" size={16} />
-              <Text style={styles.loginButtonText}>Connexion</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}
             onPress={() => navigation.navigate('LocationScreen')}
           >

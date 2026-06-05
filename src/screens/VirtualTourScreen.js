@@ -108,7 +108,7 @@ function buildHtml(dataUri) {
 
 export default function VirtualTourScreen({ route, onRequestLogin }) {
   var navigation = useNavigation();
-  var { user, setUser, freeVisitUsed, markFreeVisitAsUsed } = useUser();
+  var { user, setUser, freeVisitUsed, markFreeVisitAsUsed, incrementInteractions } = useUser();
 
   var [roomIndex, setRoomIndex] = useState(0);
   var [webviewKey, setWebviewKey] = useState(0);
@@ -139,8 +139,9 @@ export default function VirtualTourScreen({ route, onRequestLogin }) {
             setHasAccess(true);
             setAccessInfo({ gratuit: true, nombreVisitesEffectuees: 0 });
             setVisitStartTime(Date.now());
-            // Marquer la visite comme utilisée
+            // Marquer la visite comme utilisée et incrémenter les interactions
             await markFreeVisitAsUsed();
+            await incrementInteractions();
           } else {
             // Visite gratuite déjà utilisée, demander authentification
             Alert.alert(

@@ -11,6 +11,7 @@ import MainTabNavigator from './src/navigation/MainTabNavigator';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import OnboardingConfirmScreen from './src/screens/OnboardingConfirmScreen';
 import OnboardingWelcomeScreen from './src/screens/OnboardingWelcomeScreen';
+import LoginSuggestionModal from './src/components/LoginSuggestionModal';
 import { login as loginService, register as registerService, getCurrentUser, logout as logoutService } from './src/services/authService';
 
 enableScreens();
@@ -19,7 +20,21 @@ function AppContent() {
   const [route, setRoute] = useState('splash');
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const { user, setUser } = useUser();
+  const [showLoginSuggestion, setShowLoginSuggestion] = useState(false);
+  const { user, setUser, userInteractions, shouldShowLoginSuggestion, markLoginSuggestionShown } = useUser();
+
+  // Surveiller les interactions pour afficher la suggestion de connexion
+  useEffect(() => {
+    if (route === 'home' && shouldShowLoginSuggestion()) {
+      // Petit délai pour une meilleure UX (attendre que l'utilisateur revienne à l'écran principal)
+      const timer = setTimeout(() => {
+        setShowLoginSuggestion(true);
+        markLoginSuggestionShown();
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [userInteractions, route]);
 
   // Vérifier l'utilisateur au démarrage de l'app
   useEffect(() => {
@@ -174,7 +189,18 @@ function AppContent() {
     }
   };
 
-  return <View style={styles.root}>{renderCurrentScreen()}</View>;
+  return (
+    <View style={styles.root}>
+      {renderCurrentScreen()}
+
+      {/* Modal de suggestion de connexion */}
+      <LoginSuggestionModal
+        visible={showLoginSuggestion}
+        onClose={() => setShowLoginSuggestion(false)}
+        onLogin={() => setRoute('login')}
+      />
+    </View>
+  );
 }
 
 export default function App() {

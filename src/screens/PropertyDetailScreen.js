@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, StatusBar } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
+import { useUser } from '../context/UserContext';
 import { Linking } from 'react-native';
 import { API_CONFIG } from '../config/apiConfig';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +10,15 @@ export default function PropertyDetailScreen({ route, navigation }) {
   const { property } = route.params;
   const { height } = Dimensions.get('window');
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const { user, incrementInteractions } = useUser();
   const favorite = isFavorite(property.id);
+
+  // Incrémenter les interactions quand un utilisateur non connecté consulte un logement
+  useEffect(() => {
+    if (!user && incrementInteractions) {
+      incrementInteractions();
+    }
+  }, []);
 
   // Récupérer les données de l'API (original) ou les données transformées
   const data = property.original || property;
@@ -71,8 +80,16 @@ export default function PropertyDetailScreen({ route, navigation }) {
                 </View>
                 <TouchableOpacity
                   style={styles.favoriteBtn}
-                  onPress={() => {
-                    favorite ? removeFavorite(property.id) : addFavorite(property);
+                  onPress={async () => {
+                    if (favorite) {
+                      removeFavorite(property.id);
+                    } else {
+                      addFavorite(property);
+                      // Incrémenter les interactions pour les utilisateurs non connectés
+                      if (!user && incrementInteractions) {
+                        await incrementInteractions();
+                      }
+                    }
                   }}
                 >
                   <Text style={{ color: '#C48A5A', fontWeight: 'bold', fontSize: 20 }}>{favorite ? '♥' : '♡'}</Text>
