@@ -22,7 +22,7 @@ import BuyBriquesScreen from '../screens/BuyBriquesScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-export default function MainTabNavigator({ onLogout }) {
+export default function MainTabNavigator({ onLogout, onRequestLogin }) {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -52,7 +52,9 @@ export default function MainTabNavigator({ onLogout }) {
                 },
               })}
             >
-              <Tab.Screen name="Home" component={HomeScreen} />
+              <Tab.Screen name="Home">
+                {() => <HomeScreen onRequestLogin={onRequestLogin} />}
+              </Tab.Screen>
               <Tab.Screen name="Favoris" component={FavoritesScreen} />
               <Tab.Screen name="Profil">
                 {() => <ProfileScreen onLogout={onLogout} />}

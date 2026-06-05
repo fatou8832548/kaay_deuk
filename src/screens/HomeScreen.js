@@ -1,6 +1,7 @@
 ﻿import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
+import { useUser } from '../context/UserContext';
 import {
   View,
   Text,
@@ -14,7 +15,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { MapPin, Bell, Search, Filter, Settings } from 'lucide-react-native';
+import { MapPin, Bell, Search, Filter, Settings, LogIn } from 'lucide-react-native';
 import SettingsScreen from './SettingsScreen';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import FilterScreen from './FilterScreen';
@@ -26,7 +27,7 @@ const CARD_WIDTH = (width - 60) / 2;
 
 const categories = ['Tout', 'Appartement', 'Maison', 'Chambre', 'Studio', 'Villa'];
 
-export default function HomeScreen() {
+export default function HomeScreen({ onRequestLogin }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tout');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -35,6 +36,7 @@ export default function HomeScreen() {
   const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const { user } = useUser();
 
   // Récupérer les logements recommandés au montage du composant
   useEffect(() => {
@@ -143,6 +145,16 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.topActions}>
+          {!user && onRequestLogin && (
+            <TouchableOpacity 
+              style={styles.loginButton} 
+              activeOpacity={0.7}
+              onPress={onRequestLogin}
+            >
+              <LogIn color="#FFF" size={16} />
+              <Text style={styles.loginButtonText}>Connexion</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}
             onPress={() => navigation.navigate('LocationScreen')}
           >
@@ -284,6 +296,21 @@ const styles = StyleSheet.create({
   topActions: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  loginButton: {
+    backgroundColor: '#3B2A1B',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   iconButton: {
     backgroundColor: 'rgba(255,255,255,0.85)',

@@ -107,7 +107,7 @@ function buildHtml(dataUri) {
 
 export default function VirtualTourScreen({ route }) {
   var navigation = useNavigation();
-  var { user } = useUser();
+  var { user, freeVisitUsed, markFreeVisitAsUsed } = useUser();
 
   var [roomIndex, setRoomIndex] = useState(0);
   var [webviewKey, setWebviewKey] = useState(0);
@@ -121,19 +121,44 @@ export default function VirtualTourScreen({ route }) {
   var [accessInfo, setAccessInfo] = useState(null);
   var [visitStartTime, setVisitStartTime] = useState(null);
   var [showAccessModal, setShowAccessModal] = useState(false);
+  var [isGuestMode, setIsGuestMode] = useState(false);
 
   useEffect(function () {
     async function checkAccess() {
       try {
+        setCheckingAccess(true);
+        
+        // Cas 1: Utilisateur NON authentifié
         if (!user || !user.chercheur) {
-          Alert.alert(
-            'Connexion requise',
-            'Vous devez etre connecte pour acceder aux visites 3D.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-          );
+          // Vérifier si la visite gratuite a déjà été utilisée
+          if (!freeVisitUsed) {
+            // Autoriser la visite gratuite
+            console.log('Visite gratuite autorisée (mode invité)');
+            setIsGuestMode(true);
+            setHasAccess(true);
+            setAccessInfo({ gratuit: true, nombreVisitesEffectuees: 0 });
+            setVisitStartTime(Date.now());
+            // Marquer la visite comme utilisée
+            await markFreeVisitAsUsed();
+          } else {
+            // Visite gratuite déjà utilisée, demander authentification
+            Alert.alert(
+              'Authentification requise',
+              'Votre première visite virtuelle gratuite a déjà été utilisée.\n\nConnectez-vous pour continuer à explorer nos logements.',
+              [
+                { 
+                  text: 'Retour', 
+                  style: 'cancel',
+                  onPress: () => navigation.goBack() 
+                }
+              ]
+            );
+          }
+          setCheckingAccess(false);
           return;
         }
-        setCheckingAccess(true);
+
+        // Cas 2: Utilisateur authentifié - vérification backend
         var chercheurId = user.chercheur.id;
         var property = route && route.params && route.params.property;
         var data = (property && property.original) || property;
@@ -141,6 +166,8 @@ export default function VirtualTourScreen({ route }) {
         var result = await verifierAccesVisite3D(chercheurId, logementId);
         setAccessInfo(result);
         setHasAccess(result.acces);
+        setIsGuestMode(false);
+        
         if (!result.acces) {
           setShowAccessModal(true);
         } else {
@@ -164,7 +191,7 @@ export default function VirtualTourScreen({ route }) {
       }
     }
     checkAccess();
-  }, [user, navigation]);
+  }, [user, freeVisitUsed, navigation]);
 
   useEffect(function () {
     if (!hasAccess) return;
@@ -301,10 +328,12 @@ export default function VirtualTourScreen({ route }) {
             </View>
           )}
 
-          {accessInfo && accessInfo.gratuit && (
+          {(accessInfo && accessInfo.gratuit || isGuestMode) && (
             <View style={styles.freeVisitBadge}>
               <Ionicons name="gift" size={16} color="#FFF" />
-              <Text style={styles.freeVisitText}>Premiere visite gratuite !</Text>
+              <Text style={styles.freeVisitText}>
+                {isGuestMode ? 'Premiere visite gratuite !' : 'Premiere visite gratuite !'}
+              </Text>
             </View>
           )}
 

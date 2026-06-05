@@ -158,7 +158,7 @@ function AppContent() {
         } else if (onboardingStep === 3) {
           return (
             <OnboardingConfirmScreen
-              onStart={() => setRoute('login')}
+              onStart={() => setRoute('home')}
             />
           );
         }
@@ -168,7 +168,7 @@ function AppContent() {
       case 'register':
         return <RegisterScreen onRegister={handleRegister} onGoToLogin={() => setRoute('login')} />;
       case 'home':
-        return <MainTabNavigator onLogout={handleLogout} />;
+        return <MainTabNavigator onLogout={handleLogout} onRequestLogin={() => setRoute('login')} />;
       default:
         return null;
     }
