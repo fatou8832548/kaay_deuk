@@ -55,7 +55,9 @@ export default function MainTabNavigator({ onLogout, onRequestLogin }) {
               <Tab.Screen name="Home">
                 {() => <HomeScreen onRequestLogin={onRequestLogin} />}
               </Tab.Screen>
-              <Tab.Screen name="Favoris" component={FavoritesScreen} />
+              <Tab.Screen name="Favoris">
+                {() => <FavoritesScreen onRequestLogin={onRequestLogin} />}
+              </Tab.Screen>
               <Tab.Screen name="Profil">
                 {() => <ProfileScreen onLogout={onLogout} />}
               </Tab.Screen>
@@ -67,8 +69,12 @@ export default function MainTabNavigator({ onLogout, onRequestLogin }) {
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="ReservationPaymentScreen" component={ReservationPaymentScreen} />
         <Stack.Screen name="ReservationPayment" component={ReservationPaymentScreen} />
-        <Stack.Screen name="PropertyDetailScreen" component={PropertyDetailScreen} />
-        <Stack.Screen name="ReservationScreen" component={ReservationScreen} />
+        <Stack.Screen name="PropertyDetailScreen">
+          {(props) => <PropertyDetailScreen {...props} onRequestLogin={onRequestLogin} />}
+        </Stack.Screen>
+        <Stack.Screen name="ReservationScreen">
+          {(props) => <ReservationScreen {...props} onRequestLogin={onRequestLogin} />}
+        </Stack.Screen>
         <Stack.Screen name="VirtualTourScreen">
           {(props) => <VirtualTourScreen {...props} onRequestLogin={onRequestLogin} />}
         </Stack.Screen>

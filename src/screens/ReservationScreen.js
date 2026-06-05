@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useReservations } from '../context/ReservationContext';
+import { useUser } from '../context/UserContext';
+import AuthRequiredModal from '../components/AuthRequiredModal';
 
 const paymentOptions = [
   { id: 'wave', label: 'Wave', icon: require('../../assets/wave.png'), enabled: true },
@@ -12,10 +14,34 @@ const paymentOptions = [
   { id: 'mastercard', label: 'Mastercard', icon: require('../../assets/mastercard.png'), enabled: false },
 ];
 
-export default function ReservationScreen({ route, navigation }) {
+export default function ReservationScreen({ route, navigation, onRequestLogin }) {
   const property = route?.params?.property;
   const [selectedPayment, setSelectedPayment] = useState('wave');
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { addReservation } = useReservations();
+  const { user } = useUser();
+
+  // Vérifier l'authentification au montage
+  useEffect(() => {
+    if (!user) {
+      // Afficher le modal puis rediriger
+      setShowAuthModal(true);
+      // Redirection après 3 secondes si l'utilisateur ne réagit pas
+      const timer = setTimeout(() => {
+        navigation.goBack();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigation]);
+
+  // Fonction pour rediriger vers la connexion
+  const handleGoToLogin = () => {
+    setShowAuthModal(false);
+    navigation.goBack();
+    if (onRequestLogin) {
+      setTimeout(() => onRequestLogin(), 300);
+    }
+  };
 
   // Extraire le prix du logement depuis les données reçues
   // Le prix peut être dans property.price, property.prixMensuel, ou extraire d'une chaîne comme "150 000 XOF/mois"
@@ -210,6 +236,17 @@ export default function ReservationScreen({ route, navigation }) {
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal de connexion requise */}
+      <AuthRequiredModal
+        visible={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          navigation.goBack();
+        }}
+        onLogin={handleGoToLogin}
+        feature="effectuer une réservation"
+      />
     </SafeAreaView>
   );
 }

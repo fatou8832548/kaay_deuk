@@ -1,15 +1,38 @@
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, MapPin } from 'lucide-react-native';
 import { useFavorites } from '../context/FavoritesContext';
+import { useUser } from '../context/UserContext';
 import { useNavigation } from '@react-navigation/native';
+import AuthRequiredModal from '../components/AuthRequiredModal';
 
-export default function FavoritesScreen() {
+export default function FavoritesScreen({ onRequestLogin }) {
   const { favorites, removeFavorite } = useFavorites();
+  const { user } = useUser();
   const navigation = useNavigation();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Fonction pour gérer la réservation
+  const handleReservation = (item) => {
+    if (!user) {
+      setSelectedProperty(item);
+      setShowAuthModal(true);
+    } else {
+      navigation.navigate('ReservationScreen', { property: item });
+    }
+  };
+
+  // Fonction pour rediriger vers la connexion
+  const handleGoToLogin = () => {
+    setShowAuthModal(false);
+    if (onRequestLogin) {
+      setTimeout(() => onRequestLogin(), 300);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -43,7 +66,7 @@ export default function FavoritesScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.reserveBtn}
-                // disabled={item.reserved} // Optionnel : à activer si la réservation est dynamique
+                  onPress={() => handleReservation(item)}
                 >
                   <Text style={styles.reserveBtnText}>Réserver</Text>
                 </TouchableOpacity>
@@ -52,6 +75,14 @@ export default function FavoritesScreen() {
           </View>
         )}
         showsVerticalScrollIndicator={false}
+      />
+
+      {/* Modal de connexion requise */}
+      <AuthRequiredModal
+        visible={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={handleGoToLogin}
+        feature="réserver un logement"
       />
     </SafeAreaView>
   );

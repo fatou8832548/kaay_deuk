@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -16,6 +15,8 @@ import { API_CONFIG } from '../config/apiConfig';
 import { useUser } from '../context/UserContext';
 import { verifierAccesVisite3D, enregistrerVisite3D } from '../services/visite3DService';
 import { logout as logoutService } from '../services/authService';
+import AuthRequiredModal from '../components/AuthRequiredModal';
+import BriquesRequiredModal from '../components/BriquesRequiredModal';
 
 // Helpers
 async function urlToDataUri(urlPath) {
@@ -123,6 +124,7 @@ export default function VirtualTourScreen({ route, onRequestLogin }) {
   var [visitStartTime, setVisitStartTime] = useState(null);
   var [showAccessModal, setShowAccessModal] = useState(false);
   var [isGuestMode, setIsGuestMode] = useState(false);
+  var [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(function () {
     async function checkAccess() {
@@ -139,32 +141,12 @@ export default function VirtualTourScreen({ route, onRequestLogin }) {
             setHasAccess(true);
             setAccessInfo({ gratuit: true, nombreVisitesEffectuees: 0 });
             setVisitStartTime(Date.now());
-            // Marquer la visite comme utilisée et incrémenter les interactions
-            await markFreeVisitAsUsed();
-            await incrementInteractions();
+            // NE PAS marquer immédiatement - on le fera après 10s de visite réelle
           } else {
             // Visite gratuite déjà utilisée, demander authentification
-            Alert.alert(
-              'Authentification requise',
-              'Votre première visite virtuelle gratuite a déjà été utilisée.\n\nConnectez-vous pour continuer à explorer nos logements et effectuer d\'autres visites.',
-              [
-                {
-                  text: 'Se connecter',
-                  onPress: () => {
-                    navigation.goBack();
-                    if (onRequestLogin) {
-                      // Petit délai pour laisser le temps à la navigation de se faire
-                      setTimeout(() => onRequestLogin(), 100);
-                    }
-                  }
-                },
-                {
-                  text: 'Retour',
-                  style: 'cancel',
-                  onPress: () => navigation.goBack()
-                }
-              ]
-            );
+            setShowAuthModal(true);
+            setCheckingAccess(false);
+            return;
           }
           setCheckingAccess(false);
           return;
@@ -239,6 +221,25 @@ export default function VirtualTourScreen({ route, onRequestLogin }) {
     checkAccess();
   }, [user, freeVisitUsed, navigation]);
 
+  // Marquer la visite gratuite comme utilisée après 10 secondes de consultation réelle
+  useEffect(function () {
+    if (!isGuestMode || !hasAccess) return;
+
+    console.log('Timer démarré : la visite sera marquée comme utilisée après 10 secondes');
+
+    var timer = setTimeout(async function () {
+      console.log('10 secondes écoulées - Marquage de la visite gratuite comme utilisée');
+      await markFreeVisitAsUsed();
+      await incrementInteractions();
+    }, 10000); // 10 secondes
+
+    // Cleanup : annuler le timer si l'utilisateur quitte avant 10s
+    return function () {
+      clearTimeout(timer);
+      console.log('Timer annulé (utilisateur a quitté avant 10s)');
+    };
+  }, [isGuestMode, hasAccess, markFreeVisitAsUsed, incrementInteractions]);
+
   useEffect(function () {
     if (!hasAccess) return;
     var property = route && route.params && route.params.property;
@@ -297,54 +298,41 @@ export default function VirtualTourScreen({ route, onRequestLogin }) {
     setLoading(true);
   }
 
+  // Fonction pour rediriger vers la connexion
+  function handleGoToLogin() {
+    setShowAuthModal(false);
+    navigation.goBack();
+    if (onRequestLogin) {
+      setTimeout(function () { onRequestLogin(); }, 300);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Modal
+      <BriquesRequiredModal
         visible={showAccessModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={function () { }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Ionicons name="lock-closed" size={60} color="#FF9500" />
-            <Text style={styles.modalTitle}>Paiement requis</Text>
-            <Text style={styles.modalMessage}>
-              {accessInfo && accessInfo.nombreVisitesEffectuees > 0
-                ? 'Vous avez deja effectue ' + accessInfo.nombreVisitesEffectuees + ' visite' + (accessInfo.nombreVisitesEffectuees > 1 ? 's' : '') + ' 3D.\n\n'
-                : ''}
-              {'Votre premiere visite 3D etait gratuite !\n'}
-              {'Il vous faut '}
-              <Text style={{ fontWeight: 'bold', color: '#FF9500' }}>200 Briques</Text>
-              {' pour continuer.\n\n'}
-              {'Solde actuel : '}
-              <Text style={{ fontWeight: 'bold', color: '#FF9500' }}>
-                {accessInfo && accessInfo.briques !== undefined ? accessInfo.briques : '?'} Briques
-              </Text>
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalButtonSecondary}
-                onPress={function () {
-                  setShowAccessModal(false);
-                  navigation.goBack();
-                }}
-              >
-                <Text style={styles.modalButtonSecondaryText}>Retour</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalButtonPrimary}
-                onPress={function () {
-                  setShowAccessModal(false);
-                  navigation.navigate('BuyBriques');
-                }}
-              >
-                <Text style={styles.modalButtonPrimaryText}>Acheter des Briques</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={function () {
+          setShowAccessModal(false);
+          navigation.goBack();
+        }}
+        onBuyBriques={function () {
+          setShowAccessModal(false);
+          navigation.navigate('BuyBriques');
+        }}
+        nombreVisites={accessInfo?.nombreVisitesEffectuees || 0}
+        briquesRequises={200}
+        briquesActuelles={accessInfo?.briques || 0}
+      />
+
+      <AuthRequiredModal
+        visible={showAuthModal}
+        onClose={function () {
+          setShowAuthModal(false);
+          navigation.goBack();
+        }}
+        onLogin={handleGoToLogin}
+        feature="effectuer d'autres visites virtuelles 3D"
+      />
 
       {checkingAccess ? (
         <View style={styles.loadingOverlay}>
@@ -510,33 +498,6 @@ var styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, zIndex: 15,
   },
   freeVisitText: { color: '#FFF', fontSize: 13, fontWeight: 'bold', marginLeft: 8 },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center', alignItems: 'center', padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#FFF', borderRadius: 20, padding: 30,
-    alignItems: 'center', width: '100%', maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 24, fontWeight: 'bold', color: '#3B2A1B',
-    marginTop: 20, marginBottom: 15,
-  },
-  modalMessage: {
-    fontSize: 15, color: '#666', textAlign: 'center',
-    lineHeight: 22, marginBottom: 25,
-  },
-  modalButtons: { flexDirection: 'row', width: '100%', gap: 10 },
-  modalButtonSecondary: {
-    flex: 1, backgroundColor: '#E0E0E0',
-    paddingVertical: 14, borderRadius: 10, alignItems: 'center',
-  },
-  modalButtonSecondaryText: { color: '#3B2A1B', fontSize: 16, fontWeight: '600' },
-  modalButtonPrimary: {
-    flex: 1, backgroundColor: '#FF9500',
-    paddingVertical: 14, borderRadius: 10, alignItems: 'center',
-  },
-  modalButtonPrimaryText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   reserveBtn: {
     backgroundColor: '#C48A5A', borderRadius: 12,
     paddingVertical: 12, paddingHorizontal: 22, marginLeft: 12,

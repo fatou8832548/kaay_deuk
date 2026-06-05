@@ -1,17 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, StatusBar } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useUser } from '../context/UserContext';
 import { Linking } from 'react-native';
 import { API_CONFIG } from '../config/apiConfig';
 import { Ionicons } from '@expo/vector-icons';
+import AuthRequiredModal from '../components/AuthRequiredModal';
 
-export default function PropertyDetailScreen({ route, navigation }) {
+export default function PropertyDetailScreen({ route, navigation, onRequestLogin }) {
   const { property } = route.params;
   const { height } = Dimensions.get('window');
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { user, incrementInteractions } = useUser();
   const favorite = isFavorite(property.id);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Incrémenter les interactions quand un utilisateur non connecté consulte un logement
   useEffect(() => {
@@ -19,6 +21,25 @@ export default function PropertyDetailScreen({ route, navigation }) {
       incrementInteractions();
     }
   }, []);
+
+  // Fonction pour gérer la réservation
+  const handleReservation = () => {
+    if (!user) {
+      // Utilisateur non connecté, afficher le modal
+      setShowAuthModal(true);
+    } else {
+      // Utilisateur connecté, naviguer vers l'écran de réservation
+      navigation.navigate('ReservationScreen', { property });
+    }
+  };
+
+  // Fonction pour rediriger vers la connexion
+  const handleGoToLogin = () => {
+    setShowAuthModal(false);
+    if (onRequestLogin) {
+      setTimeout(() => onRequestLogin(), 300);
+    }
+  };
 
   // Récupérer les données de l'API (original) ou les données transformées
   const data = property.original || property;
@@ -128,7 +149,7 @@ export default function PropertyDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.reserveBtn}
-                  onPress={() => navigation.navigate('ReservationScreen', { property })}
+                  onPress={handleReservation}
                 >
                   <Text style={styles.reserveBtnText}>Réserver</Text>
                 </TouchableOpacity>
@@ -172,6 +193,14 @@ export default function PropertyDetailScreen({ route, navigation }) {
           </ScrollView>
         </View>
       </View>
+
+      {/* Modal de connexion requise */}
+      <AuthRequiredModal
+        visible={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={handleGoToLogin}
+        feature="réserver ce logement"
+      />
     </View>
   );
 }
