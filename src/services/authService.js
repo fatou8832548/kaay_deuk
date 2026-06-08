@@ -4,6 +4,7 @@
 
 import { API_CONFIG } from '../config/apiConfig';
 import * as SecureStore from 'expo-secure-store';
+import { fetchWithInterceptor, validateToken as validateTokenFromInterceptor, clearAuthData } from './apiInterceptor';
 
 const API_BASE_URL = API_CONFIG.API_ENDPOINT;
 
@@ -137,8 +138,7 @@ export const login = async (email, motDePasse) => {
  */
 export const logout = async () => {
   try {
-    await SecureStore.deleteItemAsync('authToken');
-    await SecureStore.deleteItemAsync('user');
+    await clearAuthData();
   } catch (error) {
     console.warn('Erreur logout:', error);
     // Ne pas lever l'erreur, la déconnexion devrait réussir même si SecureStore échoue
@@ -167,5 +167,28 @@ export const getAuthToken = async () => {
   } catch (error) {
     console.warn('Erreur getAuthToken:', error);
     return null;
+  }
+};
+
+/**
+ * Valide le token JWT actuellement stocké
+ * Utile pour vérifier au démarrage de l'app si la session est toujours valide
+ * @returns {Promise<boolean>} - true si le token est valide, false sinon
+ */
+export const validateToken = async () => {
+  try {
+    const isValid = await validateTokenFromInterceptor(API_BASE_URL);
+
+    if (!isValid) {
+      // Le token n'est pas valide, le supprimer
+      await logout();
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('Erreur validation token:', error);
+    // En cas d'erreur, supposer que le token n'est pas valide
+    await logout();
+    return false;
   }
 };

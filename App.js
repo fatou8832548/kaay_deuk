@@ -12,7 +12,8 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import OnboardingConfirmScreen from './src/screens/OnboardingConfirmScreen';
 import OnboardingWelcomeScreen from './src/screens/OnboardingWelcomeScreen';
 import LoginSuggestionModal from './src/components/LoginSuggestionModal';
-import { login as loginService, register as registerService, getCurrentUser, logout as logoutService } from './src/services/authService';
+import { login as loginService, register as registerService, getCurrentUser, logout as logoutService, validateToken } from './src/services/authService';
+import { initializeApiInterceptor } from './src/services/apiInterceptor';
 
 enableScreens();
 
@@ -22,6 +23,20 @@ function AppContent() {
   const [loading, setLoading] = useState(false);
   const [showLoginSuggestion, setShowLoginSuggestion] = useState(false);
   const { user, setUser, userInteractions, shouldShowLoginSuggestion, markLoginSuggestionShown } = useUser();
+
+  // Initialiser l'API interceptor avec le callback pour gérer les 401s
+  useEffect(() => {
+    // Configurer le callback pour les erreurs 401
+    const handleUnauthorized = async () => {
+      console.log('Utilisateur déconnecté automatiquement due à token expiré');
+      await logoutService();
+      setUser(null);
+      setRoute('login');
+    };
+
+    // Initialiser l'interceptor
+    initializeApiInterceptor(handleUnauthorized);
+  }, []);
 
   // Surveiller les interactions pour afficher la suggestion de connexion
   useEffect(() => {
@@ -47,14 +62,26 @@ function AppContent() {
 
         const currentUser = await getCurrentUser();
 
-        if (isComponentMounted) {
-          if (currentUser) {
+        if (!isComponentMounted) return;
+
+        if (currentUser) {
+          // Valider le token pour vérifier qu'il n'est pas expiré
+          console.log('Vérification du token au démarrage...');
+          const isTokenValid = await validateToken();
+
+          if (isTokenValid) {
+            // Token valide, charger l'utilisateur
             setUser(currentUser);
             setRoute('home');
           } else {
-            // Pas d'utilisateur, continuer avec le flow normal
-            setRoute('onboarding');
+            // Token invalide/expiré, forcer la déconnexion
+            console.log('Token expiré au démarrage, déconnexion de l\'utilisateur');
+            setUser(null);
+            setRoute('login');
           }
+        } else {
+          // Pas d'utilisateur, continuer avec le flow normal
+          setRoute('onboarding');
         }
       } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error);

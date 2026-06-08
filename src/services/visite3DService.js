@@ -137,6 +137,14 @@ export const getHistoriqueVisites3D = async (chercheurId) => {
     });
 
     if (!response.ok) {
+      // Vérifier si c'est une erreur d'authentification (401)
+      if (response.status === 401) {
+        const error = new Error('Token JWT invalide ou expiré');
+        error.isAuthError = true;
+        error.statusCode = 401;
+        throw error;
+      }
+
       const errorData = await response.json();
       throw new Error(errorData.message || 'Erreur lors de la récupération de l\'historique');
     }
